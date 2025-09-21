@@ -1,19 +1,31 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 import { LoginDto, AuthResponse } from '@secure-tms/data';
 import { AuthContext } from '@secure-tms/auth';
+
+interface AuthResponseExtended extends AuthResponse {
+  user: AuthResponse['user'] & {
+    role?: {
+      name: 'Owner' | 'Admin' | 'Viewer';
+      permissions: string[];
+    };
+  };
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
+  private http = inject(HttpClient);
+  private router = inject(Router);
   private currentUserSubject = new BehaviorSubject<AuthContext['user'] | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   private tokenSubject = new BehaviorSubject<string | null>(localStorage.getItem('token'));
 
-  constructor(private http: HttpClient) {
+  constructor() {
     // Check if user is already logged in
     const token = localStorage.getItem('token');
     if (token) {
@@ -29,8 +41,8 @@ export class AuthService {
     return this.tokenSubject.value;
   }
 
-  login(credentials: LoginDto): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>('/api/auth/login', credentials)
+  login(credentials: LoginDto): Observable<AuthResponseExtended> {
+    return this.http.post<AuthResponseExtended>('/api/auth/login', credentials)
       .pipe(
         tap(response => {
           // Store token and user data
@@ -43,7 +55,7 @@ export class AuthService {
             email: response.user.email,
             organizationId: response.user.organizationId,
             roleId: response.user.roleId,
-            roleName: response.user.role?.name as any,
+            roleName: response.user.role?.name || 'Viewer',
             permissions: response.user.role?.permissions || []
           };
           
@@ -56,6 +68,7 @@ export class AuthService {
     localStorage.removeItem('token');
     this.tokenSubject.next(null);
     this.currentUserSubject.next(null);
+    this.router.navigate(['/login']);
   }
 
   isAuthenticated(): boolean {
