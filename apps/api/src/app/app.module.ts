@@ -1,8 +1,12 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User, Organization, Role, Task, AuditLog } from '../entities';
+import { AuthModule } from '../auth/auth.module';
+import { TaskModule } from '../tasks/task.module';
+import { AuditModule } from '../audit/audit.module';
+import { SeedService } from '../seed/seed.service';
 
 @Module({
   imports: [
@@ -30,8 +34,21 @@ import { User, Organization, Role, Task, AuditLog } from '../entities';
             };
       },
     }),
+    TypeOrmModule.forFeature([User, Organization, Role]),
+    AuthModule,
+    TaskModule,
+    AuditModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, SeedService],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(private seedService: SeedService) {}
+
+  async onModuleInit() {
+    // Only seed in development
+    if (process.env.NODE_ENV !== 'production') {
+      await this.seedService.seed();
+    }
+  }
+}
