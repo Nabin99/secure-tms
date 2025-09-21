@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { User, Organization, Role, Task, AuditLog } from '../entities';
 
 @Module({
   imports: [
@@ -17,14 +18,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
                 process.env.DB_SSL === 'true'
                   ? { rejectUnauthorized: false }
                   : undefined,
-              autoLoadEntities: true,
+              entities: [User, Organization, Role, Task, AuditLog],
               synchronize: process.env.TYPEORM_SYNC === 'true' || !isProd,
               migrationsRun: process.env.TYPEORM_MIGRATIONS_RUN === 'true',
             }
           : {
               type: 'sqlite',
               database: process.env.SQLITE_PATH || 'tmp/dev.sqlite',
-              autoLoadEntities: true,
+              entities: [User, Organization, Role, Task, AuditLog],
               synchronize: true,
             };
       },
