@@ -1,13 +1,21 @@
-import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
-import { NxWelcome } from './nx-welcome';
+import { Component, inject, OnInit } from '@angular/core';
+import { RouterModule, Router } from '@angular/router';
+import { AuthService } from './services/auth.service';
 
 @Component({
-  imports: [NxWelcome, RouterModule],
   selector: 'app-root',
-  templateUrl: './app.html',
-  styleUrl: './app.css',
+  standalone: true,
+  imports: [RouterModule],
+  template: '<router-outlet></router-outlet>',
 })
-export class App {
-  protected title = 'dashboard';
+export class AppComponent implements OnInit {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  ngOnInit(): void {
+    // Redirect to login if not authenticated and not already on login page
+    if (!this.authService.isAuthenticated() && !window.location.pathname.includes('/login')) {
+      this.router.navigate(['/login']);
+    }
+  }
 }
