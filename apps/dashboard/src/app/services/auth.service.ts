@@ -21,15 +21,25 @@ interface AuthResponseExtended extends AuthResponse {
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-  private currentUserSubject = new BehaviorSubject<AuthContext['user'] | null>(null);
+  private currentUserSubject = new BehaviorSubject<AuthContext['user'] | null>(this.getUserFromStorage());
   public currentUser$ = this.currentUserSubject.asObservable();
-  private tokenSubject = new BehaviorSubject<string | null>(localStorage.getItem('token'));
+  private tokenSubject = new BehaviorSubject<string | null>(this.getTokenFromStorage());
 
   constructor() {
     // Check if user is already logged in
-    const token = localStorage.getItem('token');
-    if (token) {
+    const token = this.getTokenFromStorage();
+    const user = this.getUserFromStorage();
+    
+    console.log('AuthService constructor - token from localStorage:', token ? 'present' : 'none');
+    console.log('AuthService constructor - user from localStorage:', user ? 'present' : 'none');
+    
+    if (token && !user) {
+      console.log('AuthService constructor - have token but no user, calling loadProfile()');
       this.loadProfile();
+    } else if (token && user) {
+      console.log('AuthService constructor - have both token and user, ready to go');
+    } else {
+      console.log('AuthService constructor - no token or user, user needs to login');
     }
   }
 
@@ -41,12 +51,17 @@ export class AuthService {
     return this.tokenSubject.value;
   }
 
+  get isLoadingUser(): boolean {
+    // When we have a token but no user, we're still loading
+    return !!this.tokenValue && !this.currentUserValue;
+  }
+
   login(credentials: LoginDto): Observable<AuthResponseExtended> {
     return this.http.post<AuthResponseExtended>('/api/auth/login', credentials)
       .pipe(
         tap(response => {
           // Store token and user data
-          localStorage.setItem('token', response.access_token);
+          this.saveTokenToStorage(response.access_token);
           this.tokenSubject.next(response.access_token);
           
           // Create auth context user from response
@@ -60,19 +75,21 @@ export class AuthService {
           };
           
           this.currentUserSubject.next(authUser);
+          this.saveUserToStorage(authUser);
         })
       );
   }
 
   logout(): void {
-    localStorage.removeItem('token');
+    this.removeTokenFromStorage();
+    this.removeUserFromStorage();
     this.tokenSubject.next(null);
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
   }
 
   isAuthenticated(): boolean {
-    return !!this.tokenValue && !!this.currentUserValue;
+    return !!this.tokenValue && (!!this.currentUserValue || this.isLoadingUser);
   }
 
   hasPermission(permission: string): boolean {
@@ -87,14 +104,66 @@ export class AuthService {
   }
 
   private loadProfile(): void {
+    console.log('loadProfile() called');
     this.http.post<AuthContext['user']>('/api/auth/profile', {})
       .subscribe({
         next: (user) => {
+          console.log('Profile loaded successfully:', user);
           this.currentUserSubject.next(user);
+          this.saveUserToStorage(user);
         },
-        error: () => {
+        error: (error) => {
+          console.error('Failed to load user profile:', error);
+          console.log('Error status:', error.status);
+          console.log('Error message:', error.message);
           this.logout();
         }
       });
+  }
+
+  private getTokenFromStorage(): string | null {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem('token');
+    }
+    return null;
+  }
+
+  private saveTokenToStorage(token: string): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('token', token);
+    }
+  }
+
+  private removeTokenFromStorage(): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('token');
+    }
+  }
+
+  private getUserFromStorage(): AuthContext['user'] | null {
+    if (typeof localStorage !== 'undefined') {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          return JSON.parse(userStr);
+        } catch (error) {
+          console.error('Error parsing user from localStorage:', error);
+          localStorage.removeItem('user');
+        }
+      }
+    }
+    return null;
+  }
+
+  private saveUserToStorage(user: AuthContext['user']): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+  }
+
+  private removeUserFromStorage(): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('user');
+    }
   }
 }
