@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { TaskService } from '../services/task.service';
 import { TaskResponse } from '@secure-tms/data';
@@ -28,6 +28,17 @@ import { AuditLogComponent } from './audit-log.component';
             <div class="flex items-center space-x-4">
               @if (currentUser$ | async; as currentUser) {
                 <div class="flex items-center space-x-3">
+                  @if (canViewAuditLog()) {
+                    <button
+                      (click)="navigateToAuditLog()"
+                      class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                      Audit Log
+                    </button>
+                  }
                   <div class="text-sm">
                     <p class="text-gray-700 font-medium">{{ currentUser.email }}</p>
                     <p class="text-gray-500 text-xs">{{ currentUser.roleName }}</p>
@@ -204,6 +215,7 @@ import { AuditLogComponent } from './audit-log.component';
 export class DashboardComponent implements OnInit {
   private authService = inject(AuthService);
   private taskService = inject(TaskService);
+  private router = inject(Router);
 
   currentUser$ = this.authService.currentUser$;
   private currentUser = this.authService.currentUserValue;
@@ -270,6 +282,14 @@ export class DashboardComponent implements OnInit {
 
   canViewAuditLogs(): boolean {
     return this.authService.hasPermission(PERMISSIONS.AUDIT_READ);
+  }
+
+  canViewAuditLog(): boolean {
+    return this.authService.hasPermission(PERMISSIONS.AUDIT_READ);
+  }
+
+  navigateToAuditLog(): void {
+    this.router.navigate(['/audit-log']);
   }
 
   onTaskCreated(task: TaskResponse): void {
