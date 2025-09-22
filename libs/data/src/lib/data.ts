@@ -60,6 +60,12 @@ export interface AuditLog {
   organizationId: string;
   metadata?: Record<string, unknown>;
   timestamp: Date;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 // DTOs for API

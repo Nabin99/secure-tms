@@ -8,11 +8,12 @@ import { PERMISSIONS } from '@secure-tms/auth';
 import { TaskFormComponent } from './task-form.component';
 import { TaskItemComponent } from './task-item.component';
 import { ConfirmationModalComponent } from './confirmation-modal.component';
+import { AuditLogComponent } from './audit-log.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, TaskFormComponent, TaskItemComponent, ConfirmationModalComponent],
+  imports: [CommonModule, RouterModule, TaskFormComponent, TaskItemComponent, ConfirmationModalComponent, AuditLogComponent],
   template: `
     <div class="min-h-screen bg-gray-50">
       <!-- Navigation -->
@@ -49,6 +50,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
 
       <!-- Main content -->
       <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+
         <!-- Stats -->
         <div class="mb-8">
           <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
@@ -177,7 +179,14 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
           }
         </div>
       </div>
-    </div>
+
+        <!-- Audit Log Section (for Owners/Admins) -->
+        @if (canViewAuditLogs()) {
+          <div class="mt-8">
+            <app-audit-log></app-audit-log>
+          </div>
+        }
+      </div>
 
     <!-- Logout Confirmation Modal -->
     <app-confirmation-modal
@@ -257,6 +266,10 @@ export class DashboardComponent implements OnInit {
     }
     
     return true;
+  }
+
+  canViewAuditLogs(): boolean {
+    return this.authService.hasPermission(PERMISSIONS.AUDIT_READ);
   }
 
   onTaskCreated(task: TaskResponse): void {
