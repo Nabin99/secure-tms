@@ -22,8 +22,10 @@ export class JwtInterceptor implements HttpInterceptor {
 
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
+        console.log('JWT Interceptor: HTTP Error', error.status, error.message);
         // Handle 401 Unauthorized errors (token expired/invalid)
         if (error.status === 401 && this.isApiRequest(request)) {
+          console.log('JWT Interceptor: 401 error, logging out');
           this.authService.logout();
         }
         return throwError(() => error);
