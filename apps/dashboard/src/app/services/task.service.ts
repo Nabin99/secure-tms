@@ -21,8 +21,12 @@ export class TaskService {
   }
 
   createTask(task: CreateTaskDto): Observable<TaskResponse> {
+    console.log('TaskService: Creating task', task);
     return this.http.post<TaskResponse>('/api/tasks', task).pipe(
-      tap(() => this.eventService.emitTaskChange())
+      tap((response) => {
+        console.log('TaskService: Task created successfully', response);
+        this.eventService.emitTaskChange();
+      })
     );
   }
 
