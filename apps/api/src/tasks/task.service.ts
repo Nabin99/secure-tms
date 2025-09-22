@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task, User, AuditLog } from '../entities';
 import { CreateTaskDto, UpdateTaskDto, TaskResponse } from '@secure-tms/data';
-import { AuthContext, canAccessResource } from '@secure-tms/auth';
+import { AuthContext } from '@secure-tms/auth';
 
 @Injectable()
 export class TaskService {
@@ -17,6 +17,13 @@ export class TaskService {
   ) {}
 
   async create(createTaskDto: CreateTaskDto, user: AuthContext['user']): Promise<TaskResponse> {
+    // For Viewers, they can only create tasks for themselves
+    if (user.roleName === 'Viewer') {
+      if (createTaskDto.assignedUserId && createTaskDto.assignedUserId !== user.id) {
+        throw new ForbiddenException('Viewers can only create tasks for themselves');
+      }
+    }
+
     // If no assignedUserId provided, assign to current user
     const assignedUserId = createTaskDto.assignedUserId || user.id;
     
@@ -82,13 +89,19 @@ export class TaskService {
       throw new NotFoundException('Task not found');
     }
 
-    if (!canAccessResource(
-      user.organizationId,
-      task.organizationId,
-      user.roleName,
-      task.assignedUserId === user.id || task.createdBy === user.id
-    )) {
-      throw new ForbiddenException('Access denied');
+    // Check access permissions based on role
+    const isTaskOwner = task.assignedUserId === user.id || task.createdBy === user.id;
+    
+    if (user.roleName === 'Viewer') {
+      // Viewers can only view their own tasks
+      if (!isTaskOwner) {
+        throw new ForbiddenException('Viewers can only view their own tasks');
+      }
+    } else if (user.roleName === 'Owner' || user.roleName === 'Admin') {
+      // Owners and Admins can view any task in their organization
+      if (task.organizationId !== user.organizationId) {
+        throw new ForbiddenException('Access denied');
+      }
     }
 
     return this.mapToResponse(task);
@@ -104,13 +117,24 @@ export class TaskService {
       throw new NotFoundException('Task not found');
     }
 
-    if (!canAccessResource(
-      user.organizationId,
-      task.organizationId,
-      user.roleName,
-      task.assignedUserId === user.id || task.createdBy === user.id
-    )) {
-      throw new ForbiddenException('Access denied');
+    // Check access permissions based on role
+    const isTaskOwner = task.assignedUserId === user.id || task.createdBy === user.id;
+    
+    if (user.roleName === 'Viewer') {
+      // Viewers can only update their own tasks
+      if (!isTaskOwner) {
+        throw new ForbiddenException('Viewers can only update their own tasks');
+      }
+      
+      // Viewers cannot reassign tasks to other users
+      if (updateTaskDto.assignedUserId && updateTaskDto.assignedUserId !== user.id && updateTaskDto.assignedUserId !== task.assignedUserId) {
+        throw new ForbiddenException('Viewers cannot reassign tasks to other users');
+      }
+    } else if (user.roleName === 'Owner' || user.roleName === 'Admin') {
+      // Owners and Admins can update any task in their organization
+      if (task.organizationId !== user.organizationId) {
+        throw new ForbiddenException('Access denied');
+      }
     }
 
     // If updating assignedUserId, verify the new user
@@ -145,13 +169,19 @@ export class TaskService {
       throw new NotFoundException('Task not found');
     }
 
-    if (!canAccessResource(
-      user.organizationId,
-      task.organizationId,
-      user.roleName,
-      task.assignedUserId === user.id || task.createdBy === user.id
-    )) {
-      throw new ForbiddenException('Access denied');
+    // Check access permissions based on role
+    const isTaskOwner = task.assignedUserId === user.id || task.createdBy === user.id;
+    
+    if (user.roleName === 'Viewer') {
+      // Viewers can only delete their own tasks
+      if (!isTaskOwner) {
+        throw new ForbiddenException('Viewers can only delete their own tasks');
+      }
+    } else if (user.roleName === 'Owner' || user.roleName === 'Admin') {
+      // Owners and Admins can delete any task in their organization
+      if (task.organizationId !== user.organizationId) {
+        throw new ForbiddenException('Access denied');
+      }
     }
 
     await this.taskRepository.remove(task);

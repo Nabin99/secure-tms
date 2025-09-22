@@ -535,9 +535,9 @@ export class DashboardComponent implements OnInit {
       return false;
     }
     
-    // Viewers can only edit their own tasks
+    // Viewers can only edit their own tasks (tasks they created or are assigned to)
     if (this.currentUser?.roleName === 'Viewer') {
-      return task.assignedUserId === this.currentUser.id;
+      return task.assignedUserId === this.currentUser.id || task.createdByUser?.id === this.currentUser.id;
     }
     
     return true;
@@ -548,11 +548,12 @@ export class DashboardComponent implements OnInit {
       return false;
     }
     
-    // Viewers can only delete their own tasks
+    // Viewers cannot delete tasks (only Admin/Owner can delete)
     if (this.currentUser?.roleName === 'Viewer') {
-      return task.assignedUserId === this.currentUser.id;
+      return false;
     }
     
+    // Admin and Owner can delete any task in their organization
     return true;
   }
 

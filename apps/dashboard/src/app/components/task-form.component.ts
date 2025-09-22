@@ -2,7 +2,10 @@ import { Component, EventEmitter, Input, Output, inject, OnInit } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../services/task.service';
+import { UserService, UserOption } from '../services/user.service';
+import { AuthService } from '../services/auth.service';
 import { CreateTaskDto, UpdateTaskDto, TaskResponse } from '@secure-tms/data';
+import { PERMISSIONS } from '@secure-tms/auth';
 
 @Component({
   selector: 'app-task-form',
@@ -156,6 +159,35 @@ import { CreateTaskDto, UpdateTaskDto, TaskResponse } from '@secure-tms/data';
               </div>
             </div>
           </div>
+
+          <!-- Assigned User Field (Only for Admin/Owner) -->
+          @if (canAssignTasks) {
+            <div class="{{ isEditing ? '' : 'sm:col-span-1' }}">
+              <label for="assignedUserId" class="block text-sm font-semibold text-gray-900 mb-2">
+                Assign To
+              </label>
+              <div class="relative">
+                <select
+                  id="assignedUserId"
+                  formControlName="assignedUserId"
+                  class="block w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-all duration-200 sm:text-sm appearance-none"
+                >
+                  <option value="">👤 Select user (optional)</option>
+                  @for (user of users; track user.id) {
+                    <option [value]="user.id">
+                      {{ user.firstName }} {{ user.lastName }} ({{ user.roleName }})
+                    </option>
+                  }
+                </select>
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+              </div>
+              <p class="mt-1 text-xs text-gray-500">Leave empty to assign to yourself</p>
+            </div>
+          }
         </div>
 
         <!-- Description Field -->
@@ -240,6 +272,8 @@ import { CreateTaskDto, UpdateTaskDto, TaskResponse } from '@secure-tms/data';
 export class TaskFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private taskService = inject(TaskService);
+  private userService = inject(UserService);
+  private authService = inject(AuthService);
 
   @Input() task?: TaskResponse;
   @Output() taskCreated = new EventEmitter<TaskResponse>();
@@ -250,6 +284,8 @@ export class TaskFormComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
   isEditing = false;
+  users: UserOption[] = [];
+  canAssignTasks = false;
 
   constructor() {
     this.taskForm = this.fb.group({
@@ -258,15 +294,35 @@ export class TaskFormComponent implements OnInit {
       category: ['', Validators.required],
       priority: ['', Validators.required],
       status: ['Todo'],
-      dueDate: ['']
+      dueDate: [''],
+      assignedUserId: ['']
     });
   }
 
   ngOnInit(): void {
+    // Check if user can assign tasks to others
+    this.canAssignTasks = this.authService.hasPermission(PERMISSIONS.TASK_ASSIGN);
+    
+    // Load users for assignment dropdown if user has permission
+    if (this.canAssignTasks) {
+      this.loadUsers();
+    }
+    
     if (this.task) {
       this.isEditing = true;
       this.populateForm();
     }
+  }
+
+  private loadUsers(): void {
+    this.userService.getUsers().subscribe({
+      next: (users) => {
+        this.users = users;
+      },
+      error: (error) => {
+        console.error('Error loading users:', error);
+      }
+    });
   }
 
   private populateForm(): void {
@@ -277,7 +333,8 @@ export class TaskFormComponent implements OnInit {
         category: this.task.category,
         priority: this.task.priority,
         status: this.task.status,
-        dueDate: this.task.dueDate ? new Date(this.task.dueDate).toISOString().split('T')[0] : ''
+        dueDate: this.task.dueDate ? new Date(this.task.dueDate).toISOString().split('T')[0] : '',
+        assignedUserId: this.task.assignedUserId || ''
       });
     }
   }
@@ -290,7 +347,8 @@ export class TaskFormComponent implements OnInit {
       const formValue = this.taskForm.value;
       const taskData = {
         ...formValue,
-        dueDate: formValue.dueDate ? new Date(formValue.dueDate) : undefined
+        dueDate: formValue.dueDate ? new Date(formValue.dueDate) : undefined,
+        assignedUserId: formValue.assignedUserId || undefined // Only include if not empty
       };
 
       if (this.isEditing && this.task) {
