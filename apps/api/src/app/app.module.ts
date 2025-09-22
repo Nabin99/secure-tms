@@ -6,6 +6,7 @@ import { User, Organization, Role, Task, AuditLog } from '../entities';
 import { AuthModule } from '../auth/auth.module';
 import { TaskModule } from '../tasks/task.module';
 import { AuditModule } from '../audit/audit.module';
+import { UserModule } from '../users/user.module';
 import { SeedService } from '../seed/seed.service';
 
 @Module({
@@ -38,6 +39,7 @@ import { SeedService } from '../seed/seed.service';
     AuthModule,
     TaskModule,
     AuditModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedService],
