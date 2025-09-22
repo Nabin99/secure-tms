@@ -1,9 +1,12 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuditService } from '../services/audit.service';
 import { AuthService } from '../services/auth.service';
+import { EventService } from '../services/event.service';
 import { AuditLog } from '@secure-tms/data';
 import { PERMISSIONS } from '@secure-tms/auth';
+import { interval, Subscription, merge } from 'rxjs';
+import { startWith, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-audit-log',
@@ -121,34 +124,50 @@ import { PERMISSIONS } from '@secure-tms/auth';
     </div>
   `
 })
-export class AuditLogComponent implements OnInit {
+export class AuditLogComponent implements OnInit, OnDestroy {
   private auditService = inject(AuditService);
   private authService = inject(AuthService);
+  private eventService = inject(EventService);
 
   auditLogs: AuditLog[] = [];
   isLoading = true;
+  private autoRefreshSubscription?: Subscription;
 
   ngOnInit(): void {
     // Only load audit logs if user has permission
     if (this.authService.hasPermission(PERMISSIONS.AUDIT_READ)) {
-      this.loadAuditLogs();
+      this.startAutoRefresh();
     } else {
       this.isLoading = false;
     }
   }
 
-  loadAuditLogs(): void {
-    this.isLoading = true;
-    this.auditService.getAuditLogs().subscribe({
-      next: (logs) => {
-        this.auditLogs = logs;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading audit logs:', error);
-        this.isLoading = false;
-      }
-    });
+  ngOnDestroy(): void {
+    if (this.autoRefreshSubscription) {
+      this.autoRefreshSubscription.unsubscribe();
+    }
+  }
+
+  private startAutoRefresh(): void {
+    // Combine interval-based refresh with event-driven refresh
+    this.autoRefreshSubscription = merge(
+      interval(30000), // Refresh every 30 seconds
+      this.eventService.taskChanged$ // Refresh when tasks change
+    )
+      .pipe(
+        startWith(0), // Load immediately
+        switchMap(() => this.auditService.getAuditLogs())
+      )
+      .subscribe({
+        next: (logs) => {
+          this.auditLogs = logs;
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading audit logs:', error);
+          this.isLoading = false;
+        }
+      });
   }
 
   getActionDescription(log: AuditLog): string {

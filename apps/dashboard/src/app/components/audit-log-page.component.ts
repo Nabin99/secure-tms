@@ -363,7 +363,7 @@ export class AuditLogPageComponent implements OnInit, OnDestroy {
 
   private startAutoRefresh(): void {
     if (this.isAutoRefreshEnabled) {
-      this.autoRefreshSubscription = interval(5000) // Refresh every 5 seconds
+      this.autoRefreshSubscription = interval(30000) // Refresh every 30 seconds
         .pipe(
           startWith(0),
           switchMap(() => this.auditService.getAuditLogs())
