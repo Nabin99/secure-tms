@@ -90,15 +90,15 @@ The application comes with pre-seeded demo accounts for testing:
 
 ```
 Owner Account:
-- Email: owner@acmecorp.com
+- Email: owner@test.com
 - Password: password123
 
 Admin Account:
-- Email: admin@acmecorp.com  
+- Email: admin@test.com  
 - Password: password123
 
 Viewer Account:
-- Email: viewer@acmecorp.com
+- Email: viewer@test.com
 - Password: password123
 ```
 
