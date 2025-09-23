@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { LoginDto, AuthResponse } from '@secure-tms/data';
-import { AuthContext } from '@secure-tms/auth';
+import { AuthContext, JwtPayload } from '@secure-tms/auth';
 
 interface AuthResponseExtended extends AuthResponse {
   user: AuthResponse['user'] & {
@@ -60,18 +60,21 @@ export class AuthService {
     return this.http.post<AuthResponseExtended>('/api/auth/login', credentials)
       .pipe(
         tap(response => {
-          // Store token and user data
+          // Store token
           this.saveTokenToStorage(response.access_token);
           this.tokenSubject.next(response.access_token);
           
-          // Create auth context user from response
+          // Decode JWT to get permissions
+          const tokenPayload = this.decodeJWT(response.access_token);
+          
+          // Create auth context user from response and JWT payload
           const authUser: AuthContext['user'] = {
             id: response.user.id,
             email: response.user.email,
             organizationId: response.user.organizationId,
             roleId: response.user.roleId,
-            roleName: response.user.role?.name || 'Viewer',
-            permissions: response.user.role?.permissions || []
+            roleName: tokenPayload?.roleName || response.user.role?.name || 'Viewer',
+            permissions: tokenPayload?.permissions || response.user.role?.permissions || []
           };
           
           this.currentUserSubject.next(authUser);
@@ -164,6 +167,17 @@ export class AuthService {
   private removeUserFromStorage(): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('user');
+    }
+  }
+
+  private decodeJWT(token: string): JwtPayload | null {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = atob(payload);
+      return JSON.parse(decoded) as JwtPayload;
+    } catch (error) {
+      console.error('Error decoding JWT:', error);
+      return null;
     }
   }
 }

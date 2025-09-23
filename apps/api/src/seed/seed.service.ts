@@ -21,7 +21,7 @@ export class SeedService {
 
     // Check if already seeded
     const existingOrg = await this.organizationRepository.findOne({
-      where: { name: 'ACME Corporation' }
+      where: { name: 'Secure TMS' }
     });
 
     if (existingOrg) {
@@ -31,7 +31,7 @@ export class SeedService {
 
     // Create root organization
     const rootOrg = await this.organizationRepository.save({
-      name: 'ACME Corporation',
+      name: 'Secure TMS',
       description: 'Root organization for demo',
       isActive: true,
     });
@@ -86,27 +86,27 @@ export class SeedService {
 
     // Root org users
     await this.userRepository.save({
-      email: 'owner@acme.com',
+      email: 'owner@test.com',
       password: hashedPassword,
-      firstName: 'John',
-      lastName: 'Doe',
+      firstName: 'Nabin',
+      lastName: 'Dhital',
       organizationId: rootOrg.id,
       roleId: ownerRole.id,
       isActive: true,
     });
 
     await this.userRepository.save({
-      email: 'admin@acme.com',
+      email: 'admin@test.com',
       password: hashedPassword,
-      firstName: 'Jane',
-      lastName: 'Smith',
+      firstName: 'Nab',
+      lastName: 'Dhital',
       organizationId: rootOrg.id,
       roleId: adminRole.id,
       isActive: true,
     });
 
     await this.userRepository.save({
-      email: 'viewer@acme.com',
+      email: 'viewer@test.com',
       password: hashedPassword,
       firstName: 'Bob',
       lastName: 'Wilson',
@@ -117,7 +117,7 @@ export class SeedService {
 
     // Child org users
     await this.userRepository.save({
-      email: 'eng.admin@acme.com',
+      email: 'eng.admin@test.com',
       password: hashedPassword,
       firstName: 'Alice',
       lastName: 'Johnson',
@@ -127,7 +127,7 @@ export class SeedService {
     });
 
     await this.userRepository.save({
-      email: 'eng.viewer@acme.com',
+      email: 'eng.viewer@test.com',
       password: hashedPassword,
       firstName: 'Charlie',
       lastName: 'Brown',
@@ -138,10 +138,10 @@ export class SeedService {
 
     console.log('Database seeding completed!');
     console.log('Test accounts:');
-    console.log('- owner@acme.com / password123 (Owner)');
-    console.log('- admin@acme.com / password123 (Admin)');
-    console.log('- viewer@acme.com / password123 (Viewer)');
-    console.log('- eng.admin@acme.com / password123 (Admin - Engineering)');
-    console.log('- eng.viewer@acme.com / password123 (Viewer - Engineering)');
+    console.log('- owner@test.com / password123 (Owner)');
+    console.log('- admin@test.com / password123 (Admin)');
+    console.log('- viewer@test.com / password123 (Viewer)');
+    console.log('- eng.admin@test.com / password123 (Admin - Engineering)');
+    console.log('- eng.viewer@test.com / password123 (Viewer - Engineering)');
   }
 }

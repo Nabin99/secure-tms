@@ -100,9 +100,9 @@ import { AuthService } from '../services/auth.service';
           <div class="mt-6 p-4 bg-blue-50 rounded-md">
             <h4 class="text-sm font-medium text-blue-900 mb-2">Demo Accounts:</h4>
             <div class="text-xs text-blue-800 space-y-1">
-              <div><strong>Owner:</strong> owner@acme.com / password123</div>
-              <div><strong>Admin:</strong> admin@acme.com / password123</div>
-              <div><strong>Viewer:</strong> viewer@acme.com / password123</div>
+              <div><strong>Owner:</strong> owner@test.com / password123</div>
+              <div><strong>Admin:</strong> admin@test.com / password123</div>
+              <div><strong>Viewer:</strong> viewer@test.com / password123</div>
             </div>
           </div>
         </form>
