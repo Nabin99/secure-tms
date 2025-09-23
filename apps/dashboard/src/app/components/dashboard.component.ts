@@ -548,9 +548,9 @@ export class DashboardComponent implements OnInit {
       return false;
     }
     
-    // Viewers cannot delete tasks (only Admin/Owner can delete)
+    // Viewers can only delete their own tasks (tasks they created or are assigned to)
     if (this.currentUser?.roleName === 'Viewer') {
-      return false;
+      return task.assignedUserId === this.currentUser.id || task.createdByUser?.id === this.currentUser.id;
     }
     
     // Admin and Owner can delete any task in their organization
@@ -571,6 +571,7 @@ export class DashboardComponent implements OnInit {
 
   onTaskCreated(task: TaskResponse): void {
     this.tasks.unshift(task);
+    this.applyFilters(); // Update the filtered view to show the new task
     this.showCreateForm = false;
   }
 
