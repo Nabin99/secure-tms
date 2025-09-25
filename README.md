@@ -33,6 +33,120 @@ A comprehensive task management system built with **NX Monorepo**, **Angular**, 
 - ✅ **Permission Guards**: Route-level authorization
 - ✅ **Data Validation**: Comprehensive input validation
 - ✅ **Organization Boundaries**: Strict data isolation
+- ✅ **Secure Token Storage**: JWT-only localStorage with no user object persistence
+- ✅ **Token Expiration**: Automatic token validation and cleanup
+- ✅ **RBAC**: Role-Based Access Control with granular permissions
+- ✅ **HTTP Interceptors**: Automatic token injection and 401 handling
+- ✅ **Client-side Security**: No sensitive data persisted in browser storage
+
+## 🔐 Security Architecture
+
+### Authentication Flow
+
+1. **Login**: User provides credentials → Server validates → Returns JWT token
+2. **Token Storage**: Only JWT token stored in localStorage (no user object)
+3. **Request Authorization**: HTTP interceptor adds `Authorization: Bearer <token>` header
+4. **Token Validation**: Server validates JWT on each API request
+5. **Session Persistence**: On page refresh, token is validated and user profile re-fetched
+6. **Logout**: Token removed from localStorage and user redirected to login
+
+### Security Best Practices Implemented
+
+#### Client-Side Security
+```typescript
+// ✅ SECURE: Only JWT token in localStorage
+localStorage.setItem('token', jwtToken);
+
+// ❌ INSECURE: Never store user objects (avoided)
+// localStorage.setItem('user', JSON.stringify(userObject));
+```
+
+#### Token Management
+```typescript
+// Automatic token expiration check
+private isTokenExpired(token: string): boolean {
+  const payload = this.decodeJWT(token);
+  const currentTime = Math.floor(Date.now() / 1000);
+  return payload.exp < currentTime;
+}
+
+// Clean token storage on app initialization
+private cleanupDeprecatedUserStorage(): void {
+  localStorage.removeItem('user'); // Remove legacy user objects
+}
+```
+
+#### HTTP Security
+```typescript
+// JWT interceptor adds Authorization header
+export function jwtInterceptor(request: HttpRequest<unknown>, next: HttpHandlerFn) {
+  const token = authService.tokenValue;
+  if (token && isApiRequest(request)) {
+    request = request.clone({
+      setHeaders: { Authorization: `Bearer ${token}` }
+    });
+  }
+  return next(request);
+}
+```
+
+### Role-Based Access Control (RBAC)
+
+#### Permission System
+```typescript
+// Granular permissions
+const ROLE_PERMISSIONS = {
+  Owner: ['task:create', 'task:read', 'task:update', 'task:delete', 
+          'user:create', 'user:read', 'user:update', 'user:delete',
+          'org:read', 'org:update', 'audit:read'],
+  Admin: ['task:create', 'task:read', 'task:update', 'task:delete',
+          'user:create', 'user:read', 'user:update'],
+  Viewer: ['task:read', 'user:read']
+};
+```
+
+#### Route Protection
+```typescript
+// Angular route guards
+@Get('users')
+@UseGuards(AuthGuard('jwt'))
+@Permissions(PERMISSIONS.USER_READ)
+async findAllInOrganization(@CurrentUser() user: AuthContext['user']) {
+  return this.userService.findAllInOrganization(user.organizationId);
+}
+```
+
+### Data Isolation
+
+#### Organization-Level Security
+- All data queries include organization context
+- Users can only access data within their organization
+- Automatic organization ID injection in API requests
+- Database-level foreign key constraints enforce isolation
+
+#### API Security Middleware
+```typescript
+// JWT Strategy validation
+async validate(payload: JwtPayload): Promise<AuthContext['user']> {
+  const user = await this.userRepository.findOne({
+    where: { id: payload.sub, isActive: true },
+    relations: ['role']
+  });
+  
+  if (!user) {
+    throw new UnauthorizedException();
+  }
+  
+  return {
+    id: user.id,
+    email: user.email,
+    organizationId: user.organizationId,
+    roleId: user.roleId,
+    roleName: user.role.name,
+    permissions: payload.permissions
+  };
+}
+```
 
 ## �🏗️ Architecture Overview
 
@@ -95,6 +209,20 @@ npx nx serve dashboard
 npx nx serve api        # Backend on http://localhost:3000
 npx nx serve dashboard  # Frontend on http://localhost:4200
 ```
+
+### Test Credentials
+
+The application comes with seeded test accounts for different roles:
+
+| Role | Email | Password | Description |
+|------|--------|----------|-------------|
+| **Owner** | `owner@test.com` | `password123` | Full system access including user management |
+| **Admin** | `admin@test.com` | `password123` | Administrative access, user management |
+| **Viewer** | `viewer@test.com` | `password123` | Read-only access to tasks and users |
+| **Eng Admin** | `eng.admin@test.com` | `password123` | Admin role in Engineering organization |
+| **Eng Viewer** | `eng.viewer@test.com` | `password123` | Viewer role in Engineering organization |
+
+> **Security Note**: These are development-only credentials. The database is automatically seeded on first run of the API server.
 
 ### Environment Configuration (.env)
 

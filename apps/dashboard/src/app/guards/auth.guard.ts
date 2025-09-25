@@ -19,7 +19,7 @@ export const authGuard: CanActivateFn = () => {
     return false;
   }
 
-  // If we have both token and user (from localStorage), allow access immediately
+  // If we have both token and user (in memory), allow access immediately
   if (authService.tokenValue && authService.currentUserValue) {
     console.log('AuthGuard: Have both token and user, allowing access');
     return true;

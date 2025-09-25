@@ -15,31 +15,55 @@ interface AuthResponseExtended extends AuthResponse {
   };
 }
 
+interface ProfileResponse {
+  id: string;
+  email: string;
+  organizationId: string;
+  roleId: string;
+  roleName?: string;
+  permissions?: string[];
+  role?: {
+    name: string;
+    permissions: string[];
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-  private currentUserSubject = new BehaviorSubject<AuthContext['user'] | null>(this.getUserFromStorage());
+  private currentUserSubject = new BehaviorSubject<AuthContext['user'] | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   private tokenSubject = new BehaviorSubject<string | null>(this.getTokenFromStorage());
 
   constructor() {
-    // Check if user is already logged in
+    // Clean up any existing user data from localStorage (security improvement)
+    this.cleanupDeprecatedUserStorage();
+    
+    // Check if user has a valid token
     const token = this.getTokenFromStorage();
-    const user = this.getUserFromStorage();
     
     console.log('AuthService constructor - token from localStorage:', token ? 'present' : 'none');
-    console.log('AuthService constructor - user from localStorage:', user ? 'present' : 'none');
     
-    if (token && !user) {
-      console.log('AuthService constructor - have token but no user, calling loadProfile()');
-      this.loadProfile();
-    } else if (token && user) {
-      console.log('AuthService constructor - have both token and user, ready to go');
+    if (token) {
+      // Check if token is expired before using it
+      if (this.isTokenExpired(token)) {
+        console.log('AuthService constructor - token is expired, removing it');
+        this.removeTokenFromStorage();
+        return;
+      }
+      
+      console.log('AuthService constructor - token found and valid, setting token and loading user profile from API');
+      // Ensure token is set in the BehaviorSubject before making API calls
+      this.tokenSubject.next(token);
+      // Use setTimeout to ensure the token is available to the interceptor
+      setTimeout(() => {
+        this.loadProfile();
+      }, 0);
     } else {
-      console.log('AuthService constructor - no token or user, user needs to login');
+      console.log('AuthService constructor - no token, user needs to login');
     }
   }
 
@@ -60,7 +84,7 @@ export class AuthService {
     return this.http.post<AuthResponseExtended>('/api/auth/login', credentials)
       .pipe(
         tap(response => {
-          // Store token
+          // Store only the JWT token
           this.saveTokenToStorage(response.access_token);
           this.tokenSubject.next(response.access_token);
           
@@ -77,15 +101,14 @@ export class AuthService {
             permissions: tokenPayload?.permissions || response.user.role?.permissions || []
           };
           
+          // Store user data only in memory (BehaviorSubject)
           this.currentUserSubject.next(authUser);
-          this.saveUserToStorage(authUser);
         })
       );
   }
 
   logout(): void {
     this.removeTokenFromStorage();
-    this.removeUserFromStorage();
     this.tokenSubject.next(null);
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
@@ -107,18 +130,44 @@ export class AuthService {
   }
 
   private loadProfile(): void {
-    console.log('loadProfile() called');
-    this.http.post<AuthContext['user']>('/api/auth/profile', {})
+    console.log('loadProfile() called - current token:', this.tokenValue ? 'present' : 'none');
+    
+    if (!this.tokenValue) {
+      console.log('loadProfile() - no token available, logging out');
+      this.logout();
+      return;
+    }
+    
+    this.http.get<ProfileResponse>('/api/users/profile/me')
       .subscribe({
         next: (user) => {
           console.log('Profile loaded successfully:', user);
-          this.currentUserSubject.next(user);
-          this.saveUserToStorage(user);
+          // Transform the API response to match AuthContext user structure
+          const authUser: AuthContext['user'] = {
+            id: user.id,
+            email: user.email,
+            organizationId: user.organizationId,
+            roleId: user.roleId,
+            roleName: user.roleName || user.role?.name || 'Viewer',
+            permissions: user.permissions || user.role?.permissions || []
+          };
+          
+          // Store user data only in memory (BehaviorSubject)
+          this.currentUserSubject.next(authUser);
         },
         error: (error) => {
           console.error('Failed to load user profile:', error);
           console.log('Error status:', error.status);
           console.log('Error message:', error.message);
+          console.log('Current token when error occurred:', this.tokenValue ? 'present' : 'none');
+          
+          // If it's a 401 Unauthorized, the token is invalid
+          if (error.status === 401) {
+            console.log('401 Unauthorized - token is invalid, logging out');
+          } else {
+            console.log('Profile load failed with status:', error.status);
+          }
+          
           this.logout();
         }
       });
@@ -143,28 +192,8 @@ export class AuthService {
     }
   }
 
-  private getUserFromStorage(): AuthContext['user'] | null {
-    if (typeof localStorage !== 'undefined') {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
-          return JSON.parse(userStr);
-        } catch (error) {
-          console.error('Error parsing user from localStorage:', error);
-          localStorage.removeItem('user');
-        }
-      }
-    }
-    return null;
-  }
-
-  private saveUserToStorage(user: AuthContext['user']): void {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(user));
-    }
-  }
-
-  private removeUserFromStorage(): void {
+  private cleanupDeprecatedUserStorage(): void {
+    // Remove any existing user data from localStorage for security
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('user');
     }
@@ -178,6 +207,31 @@ export class AuthService {
     } catch (error) {
       console.error('Error decoding JWT:', error);
       return null;
+    }
+  }
+
+  private isTokenExpired(token: string): boolean {
+    try {
+      const payload = this.decodeJWT(token);
+      if (!payload || !payload.exp) {
+        return true;
+      }
+      
+      // Check if token is expired (exp is in seconds, Date.now() is in milliseconds)
+      const currentTime = Math.floor(Date.now() / 1000);
+      const isExpired = payload.exp < currentTime;
+      
+      console.log('Token expiration check:', {
+        exp: payload.exp,
+        now: currentTime,
+        expired: isExpired,
+        expiresAt: new Date(payload.exp * 1000).toISOString()
+      });
+      
+      return isExpired;
+    } catch (error) {
+      console.error('Error checking token expiration:', error);
+      return true; // If we can't decode it, consider it expired
     }
   }
 }
