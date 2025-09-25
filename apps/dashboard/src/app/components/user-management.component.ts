@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { UserService } from '../services/user.service';
 import { RoleService, RoleResponse } from '../services/role.service';
@@ -12,32 +13,44 @@ import { PERMISSIONS } from '@secure-tms/auth';
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   template: `
-    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <!-- Header -->
-      <div class="md:flex md:items-center md:justify-between mb-6">
-        <div class="flex-1 min-w-0">
-          <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            User Management
-          </h2>
-          <p class="mt-1 text-sm text-gray-500">
-            Manage users in your organization
-          </p>
-        </div>
-        @if (canCreateUsers()) {
-          <div class="mt-4 flex md:mt-0 md:ml-4">
-            <button
-              (click)="showCreateForm = !showCreateForm"
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              {{ showCreateForm ? 'Cancel' : 'Add User' }}
-            </button>
+    <div class="min-h-screen bg-gray-50">
+      <!-- Navigation -->
+      <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex justify-between h-16">
+            <div class="flex items-center space-x-4">
+              <button
+                (click)="goBack()"
+                class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Dashboard
+              </button>
+              <h1 class="text-xl font-semibold text-gray-900">
+                User Management
+              </h1>
+            </div>
+            @if (canCreateUsers()) {
+              <div class="flex items-center">
+                <button
+                  (click)="showCreateForm = !showCreateForm"
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  {{ showCreateForm ? 'Cancel' : 'Add User' }}
+                </button>
+              </div>
+            }
           </div>
-        }
-      </div>
+        </div>
+      </nav>
 
+      <!-- Main content -->
+      <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <!-- Create User Form -->
       @if (showCreateForm && canCreateUsers()) {
         <div class="mb-6 bg-white shadow rounded-lg">
@@ -271,6 +284,7 @@ import { PERMISSIONS } from '@secure-tms/auth';
         </div>
       </div>
     }
+    </div>
   `
 })
 export class UserManagementComponent implements OnInit {
@@ -278,6 +292,7 @@ export class UserManagementComponent implements OnInit {
   private roleService = inject(RoleService);
   private authService = inject(AuthService);
   private formBuilder = inject(FormBuilder);
+  private router = inject(Router);
 
   users: UserResponse[] = [];
   availableRoles: RoleResponse[] = [];
@@ -309,6 +324,10 @@ export class UserManagementComponent implements OnInit {
   ngOnInit(): void {
     this.loadUsers();
     this.loadAvailableRoles();
+  }
+
+  goBack(): void {
+    this.router.navigate(['/dashboard']);
   }
 
   loadUsers(): void {
