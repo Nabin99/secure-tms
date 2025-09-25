@@ -17,6 +17,9 @@ export class Organization {
   @Column({ nullable: true })
   description?: string;
 
+  @Column({ type: 'int', default: 1 })
+  level: number; // 1 = Parent Organization, 2 = Child Organization
+
   @Column({ default: true })
   isActive: boolean;
 

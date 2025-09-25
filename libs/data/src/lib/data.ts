@@ -155,3 +155,42 @@ export interface TaskResponse extends Omit<Task, 'createdBy'> {
     lastName: string;
   };
 }
+
+// Organization DTOs
+export interface CreateOrganizationDto {
+  name: string;
+  description?: string;
+  parentId?: string;
+}
+
+export interface UpdateOrganizationDto {
+  name?: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface OrganizationStats {
+  totalUsers: number;
+  activeUsers: number;
+  totalTasks: number;
+  completedTasks: number;
+  totalRoles: number;
+  subOrganizations: number;
+}
+
+export interface OrganizationResponse {
+  id: string;
+  name: string;
+  description?: string;
+  level: number;
+  parentId?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  parent?: {
+    id: string;
+    name: string;
+  };
+  children?: OrganizationResponse[];
+  stats?: OrganizationStats;
+}
