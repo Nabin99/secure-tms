@@ -148,7 +148,7 @@ export class AuthService {
             email: user.email,
             organizationId: user.organizationId,
             roleId: user.roleId,
-            roleName: user.roleName || user.role?.name || 'Viewer',
+            roleName: (user.roleName || user.role?.name || 'Viewer') as 'Owner' | 'Admin' | 'Viewer',
             permissions: user.permissions || user.role?.permissions || []
           };
           

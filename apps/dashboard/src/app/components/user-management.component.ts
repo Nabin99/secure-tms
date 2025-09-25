@@ -279,9 +279,126 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                 <span class="ml-2">Team Members</span>
               </h3>
               <span class="ml-3 px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                {{ users.length }} {{ users.length === 1 ? 'User' : 'Users' }}
+                {{ filteredUsers.length }} {{ filteredUsers.length === 1 ? 'User' : 'Users' }}
+                @if (filteredUsers.length !== users.length) {
+                  <span class="text-blue-600"> of {{ users.length }}</span>
+                }
               </span>
             </div>
+          </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="bg-white px-6 py-4 border-b border-slate-200">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Search -->
+            <div class="md:col-span-2">
+              <label for="searchInput" class="block text-sm font-medium text-slate-700 mb-2">
+                🔍 Search Users
+              </label>
+              <input
+                id="searchInput"
+                type="text"
+                [(ngModel)]="searchTerm"
+                (ngModelChange)="onSearchChange()"
+                placeholder="Search by name, email, or role..."
+                class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <!-- Role Filter -->
+            <div>
+              <label for="roleFilter" class="block text-sm font-medium text-slate-700 mb-2">
+                🎭 Filter by Role
+              </label>
+              <select
+                id="roleFilter"
+                [(ngModel)]="selectedRoleFilter"
+                (ngModelChange)="onRoleFilterChange()"
+                class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Roles</option>
+                @for (role of availableRoles; track role.id) {
+                  <option [value]="role.id">{{ role.name }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+              <label for="statusFilter" class="block text-sm font-medium text-slate-700 mb-2">
+                ⚡ Filter by Status
+              </label>
+              <select
+                id="statusFilter"
+                [(ngModel)]="statusFilter"
+                (ngModelChange)="onStatusFilterChange()"
+                class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Sort Controls and Clear Filters -->
+          <div class="flex flex-wrap items-center justify-between mt-4 pt-4 border-t border-slate-100">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-slate-700">📊 Sort by:</span>
+              <button
+                (click)="onSort('firstName')"
+                [class]="'px-3 py-1 text-sm rounded-lg transition-colors ' + (sortField === 'firstName' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100')"
+              >
+                First Name
+                @if (sortField === 'firstName') {
+                  <span class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                }
+              </button>
+              <button
+                (click)="onSort('lastName')"
+                [class]="'px-3 py-1 text-sm rounded-lg transition-colors ' + (sortField === 'lastName' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100')"
+              >
+                Last Name
+                @if (sortField === 'lastName') {
+                  <span class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                }
+              </button>
+              <button
+                (click)="onSort('email')"
+                [class]="'px-3 py-1 text-sm rounded-lg transition-colors ' + (sortField === 'email' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100')"
+              >
+                Email
+                @if (sortField === 'email') {
+                  <span class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                }
+              </button>
+              <button
+                (click)="onSort('role')"
+                [class]="'px-3 py-1 text-sm rounded-lg transition-colors ' + (sortField === 'role' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100')"
+              >
+                Role
+                @if (sortField === 'role') {
+                  <span class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                }
+              </button>
+              <button
+                (click)="onSort('createdAt')"
+                [class]="'px-3 py-1 text-sm rounded-lg transition-colors ' + (sortField === 'createdAt' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100')"
+              >
+                Date Added
+                @if (sortField === 'createdAt') {
+                  <span class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                }
+              </button>
+            </div>
+            
+            <button
+              (click)="clearFilters()"
+              class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              🗑️ Clear Filters
+            </button>
           </div>
         </div>
 
@@ -295,7 +412,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
               <p class="text-slate-600 font-medium">Loading team members...</p>
             </div>
           </div>
-        } @else if (users.length === 0) {
+        } @else if (filteredUsers.length === 0 && users.length === 0) {
           <div class="px-6 py-16 text-center">
             <div class="flex flex-col items-center">
               <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
@@ -318,9 +435,27 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
               }
             </div>
           </div>
+        } @else if (filteredUsers.length === 0) {
+          <div class="px-6 py-16 text-center">
+            <div class="flex flex-col items-center">
+              <div class="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-4">
+                <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold text-slate-900 mb-2">No users found</h3>
+              <p class="text-slate-500 mb-6 max-w-sm">No users match your current filters. Try adjusting your search criteria.</p>
+              <button
+                (click)="clearFilters()"
+                class="inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+              >
+                🗑️ Clear Filters
+              </button>
+            </div>
+          </div>
         } @else {
           <div class="divide-y divide-slate-100">
-            @for (user of users; track user.id) {
+            @for (user of filteredUsers; track user.id) {
               <div class="p-6 hover:bg-slate-50 transition-colors duration-150">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-4">
@@ -613,6 +748,7 @@ export class UserManagementComponent implements OnInit {
   private router = inject(Router);
 
   users: UserResponse[] = [];
+  filteredUsers: UserResponse[] = [];
   availableRoles: RoleResponse[] = [];
   isLoading = true;
   showCreateForm = false;
@@ -620,6 +756,13 @@ export class UserManagementComponent implements OnInit {
   selectedUser: UserResponse | null = null;
   isCreating = false;
   isUpdating = false;
+
+  // Filtering and sorting properties
+  searchTerm = '';
+  selectedRoleFilter = '';
+  statusFilter = 'all'; // 'all', 'active', 'inactive'
+  sortField: 'firstName' | 'lastName' | 'email' | 'role' | 'createdAt' = 'firstName';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   // Modal properties
   showDeleteConfirmation = false;
@@ -659,6 +802,7 @@ export class UserManagementComponent implements OnInit {
     this.userService.getUsers().subscribe({
       next: (users) => {
         this.users = users;
+        this.applyFiltersAndSorting();
         this.isLoading = false;
       },
       error: (error) => {
@@ -689,6 +833,7 @@ export class UserManagementComponent implements OnInit {
       this.userService.createUser(userData).subscribe({
         next: (newUser) => {
           this.users.unshift(newUser);
+          this.applyFiltersAndSorting();
           this.createUserForm.reset();
           this.showCreateForm = false;
           this.isCreating = false;
@@ -724,6 +869,7 @@ export class UserManagementComponent implements OnInit {
           if (index !== -1) {
             this.users[index] = updatedUser;
           }
+          this.applyFiltersAndSorting();
           this.closeEditModal();
           this.isUpdating = false;
         },
@@ -764,6 +910,7 @@ export class UserManagementComponent implements OnInit {
         if (index !== -1) {
           this.users[index] = updatedUser;
         }
+        this.applyFiltersAndSorting();
         this.showStatusConfirmation = false;
         this.userToToggle = null;
       },
@@ -791,6 +938,7 @@ export class UserManagementComponent implements OnInit {
     this.userService.deleteUser(this.userToDelete.id).subscribe({
       next: () => {
         this.users = this.users.filter(u => u.id !== this.userToDelete?.id);
+        this.applyFiltersAndSorting();
         this.showDeleteConfirmation = false;
         this.userToDelete = null;
       },
@@ -828,6 +976,106 @@ export class UserManagementComponent implements OnInit {
   get statusToggleConfirmText(): string {
     if (!this.userToToggle) return '';
     return this.userToToggle.isActive ? 'Deactivate' : 'Activate';
+  }
+
+  // Filtering and Sorting Methods
+  applyFiltersAndSorting(): void {
+    let filtered = [...this.users];
+
+    // Apply search filter
+    if (this.searchTerm.trim()) {
+      const searchLower = this.searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(user => 
+        user.firstName.toLowerCase().includes(searchLower) ||
+        user.lastName.toLowerCase().includes(searchLower) ||
+        user.email.toLowerCase().includes(searchLower) ||
+        (user.role?.name.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply role filter
+    if (this.selectedRoleFilter) {
+      filtered = filtered.filter(user => user.roleId === this.selectedRoleFilter);
+    }
+
+    // Apply status filter
+    if (this.statusFilter !== 'all') {
+      const isActiveFilter = this.statusFilter === 'active';
+      filtered = filtered.filter(user => user.isActive === isActiveFilter);
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: string | Date;
+      let bValue: string | Date;
+
+      switch (this.sortField) {
+        case 'firstName':
+          aValue = a.firstName.toLowerCase();
+          bValue = b.firstName.toLowerCase();
+          break;
+        case 'lastName':
+          aValue = a.lastName.toLowerCase();
+          bValue = b.lastName.toLowerCase();
+          break;
+        case 'email':
+          aValue = a.email.toLowerCase();
+          bValue = b.email.toLowerCase();
+          break;
+        case 'role':
+          aValue = (a.role?.name || '').toLowerCase();
+          bValue = (b.role?.name || '').toLowerCase();
+          break;
+        case 'createdAt':
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+          break;
+        default:
+          aValue = a.firstName.toLowerCase();
+          bValue = b.firstName.toLowerCase();
+      }
+
+      if (aValue < bValue) {
+        return this.sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return this.sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    this.filteredUsers = filtered;
+  }
+
+  onSearchChange(): void {
+    this.applyFiltersAndSorting();
+  }
+
+  onRoleFilterChange(): void {
+    this.applyFiltersAndSorting();
+  }
+
+  onStatusFilterChange(): void {
+    this.applyFiltersAndSorting();
+  }
+
+  onSort(field: 'firstName' | 'lastName' | 'email' | 'role' | 'createdAt'): void {
+    if (this.sortField === field) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortDirection = 'asc';
+    }
+    this.applyFiltersAndSorting();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedRoleFilter = '';
+    this.statusFilter = 'all';
+    this.sortField = 'firstName';
+    this.sortDirection = 'asc';
+    this.applyFiltersAndSorting();
   }
 
   canCreateUsers(): boolean {
