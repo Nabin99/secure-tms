@@ -102,6 +102,41 @@ export interface CreateUserDto {
   roleId: string;
 }
 
+export interface UpdateUserDto {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  roleId?: string;
+  isActive?: boolean;
+}
+
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface UserResponse {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  organizationId: string;
+  roleId: string;
+  roleName: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  organization?: {
+    id: string;
+    name: string;
+  };
+  role?: {
+    id: string;
+    name: string;
+    description: string;
+  };
+}
+
 // Response DTOs
 export interface AuthResponse {
   access_token: string;
@@ -119,4 +154,43 @@ export interface TaskResponse extends Omit<Task, 'createdBy'> {
     firstName: string;
     lastName: string;
   };
+}
+
+// Organization DTOs
+export interface CreateOrganizationDto {
+  name: string;
+  description?: string;
+  parentId?: string;
+}
+
+export interface UpdateOrganizationDto {
+  name?: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface OrganizationStats {
+  totalUsers: number;
+  activeUsers: number;
+  totalTasks: number;
+  completedTasks: number;
+  totalRoles: number;
+  subOrganizations: number;
+}
+
+export interface OrganizationResponse {
+  id: string;
+  name: string;
+  description?: string;
+  level: number;
+  parentId?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  parent?: {
+    id: string;
+    name: string;
+  };
+  children?: OrganizationResponse[];
+  stats?: OrganizationStats;
 }

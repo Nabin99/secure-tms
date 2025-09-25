@@ -30,12 +30,23 @@ import { AuditLogComponent } from './audit-log.component';
             <div class="flex items-center space-x-4">
               @if (currentUser$ | async; as currentUser) {
                 <div class="flex items-center space-x-3">
+                  @if (canManageUsers()) {
+                    <button
+                      (click)="navigateToUsers()"
+                      class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                      </svg>
+                      Users
+                    </button>
+                  }
                   @if (canViewAuditLog()) {
                     <button
                       (click)="navigateToAuditLog()"
                       class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                       </svg>
                       Audit Log
@@ -49,7 +60,7 @@ import { AuditLogComponent } from './audit-log.component';
                     (click)="logout()"
                     class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
                     Logout
@@ -565,8 +576,16 @@ export class DashboardComponent implements OnInit {
     return this.authService.hasPermission(PERMISSIONS.AUDIT_READ);
   }
 
+  canManageUsers(): boolean {
+    return this.authService.hasPermission(PERMISSIONS.USER_READ);
+  }
+
   navigateToAuditLog(): void {
     this.router.navigate(['/audit-log']);
+  }
+
+  navigateToUsers(): void {
+    this.router.navigate(['/users']);
   }
 
   onTaskCreated(task: TaskResponse): void {
