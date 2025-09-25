@@ -131,7 +131,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
       <!-- Confirmation Modal for Delete -->
       <app-confirmation-modal
         [isOpen]="showDeleteConfirmation"
-        title="🗑️ Delete Task"
+        title="Delete Task"
         message="Are you sure you want to delete this task? This action cannot be undone."
         type="danger"
         confirmText="Delete Task"
