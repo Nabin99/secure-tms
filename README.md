@@ -7,10 +7,13 @@ A comprehensive task management system built with **NX Monorepo**, **Angular**, 
 ### Core Functionality
 - ✅ **Role-Based Access Control**: Owner, Admin, Viewer roles with specific permissions
 - ✅ **Task Management**: Create, read, update, delete tasks with status tracking
-- ✅ **User Management**: Organization-level user administration
+- ✅ **Comprehensive User Management**: Full CRUD operations, profile management, and role assignment
+- ✅ **Advanced User Administration**: Create, edit, delete users with role-based permissions
+- ✅ **Password Management**: Secure password change functionality with validation
+- ✅ **Profile Management**: User profile updates with organization context
 - ✅ **Task Assignment**: Role-based task assignment capabilities
 - ✅ **Organization Isolation**: Multi-tenant data separation
-- ✅ **Audit Logging**: Comprehensive action tracking
+- ✅ **Audit Logging**: Comprehensive action tracking for all operations
 
 ### Frontend Features
 - ✅ **Responsive Design**: Mobile-first TailwindCSS interface
@@ -18,6 +21,11 @@ A comprehensive task management system built with **NX Monorepo**, **Angular**, 
 - ✅ **Real-time Updates**: Immediate UI feedback
 - ✅ **Authentication Flow**: Secure login/logout with JWT
 - ✅ **Role-based UI**: Conditional features based on user permissions
+- ✅ **User Management Interface**: Complete user administration with forms and modals
+- ✅ **Role Assignment UI**: Dynamic role selection and management
+- ✅ **Profile Management**: User profile editing and password changes
+- ✅ **Data Tables**: Sortable, filterable user and task lists
+- ✅ **Modal Dialogs**: Intuitive create/edit/delete workflows
 
 ### Security Features
 - ✅ **JWT Authentication**: Secure token-based authentication
@@ -55,6 +63,10 @@ secure-tms/
 
 - **@secure-tms/auth**: Centralized authentication logic, permissions, and interfaces
 - **@secure-tms/data**: Shared DTOs, interfaces, and data models across frontend/backend
+  - User management DTOs: `CreateUserDto`, `UpdateUserDto`, `UserResponse`
+  - Profile management: `ChangePasswordDto` for secure password updates
+  - Role management: `RoleResponse` interface for role data
+  - Complete type safety between frontend and backend APIs
 
 ## 🚀 Quick Setup Instructions
 
@@ -83,26 +95,6 @@ npx nx serve dashboard
 npx nx serve api        # Backend on http://localhost:3000
 npx nx serve dashboard  # Frontend on http://localhost:4200
 ```
-
-### Demo Credentials
-
-The application comes with pre-seeded demo accounts for testing:
-
-```
-Owner Account:
-- Email: owner@test.com
-- Password: password123
-
-Admin Account:
-- Email: admin@test.com  
-- Password: password123
-
-Viewer Account:
-- Email: viewer@test.com
-- Password: password123
-```
-
-**Note**: Change these credentials in production environments.
 
 ### Environment Configuration (.env)
 
@@ -226,23 +218,30 @@ CREATE TABLE audit_logs (
 #### **Owner** (Highest Level)
 
 - **Organization Management**: Can update organization settings
-- **User Management**: Create, read, update, delete all users
+- **User Management**: Create, read, update, delete all users in organization
+- **Role Management**: Assign and modify user roles
+- **Password Management**: Can reset user passwords and manage account security
 - **Task Management**: Full CRUD access to all tasks in organization
 - **Task Assignment**: Can assign tasks to any user
-- **Audit Access**: Can view all audit logs
+- **Audit Access**: Can view all audit logs and security events
 
 #### **Admin** (Middle Level)
 
-- **User Management**: Create, read, update users (cannot delete)
+- **User Management**: Create, read, update users (cannot delete users)
+- **Role Assignment**: Can assign roles to users (except Owner role)
+- **Profile Updates**: Can update user profiles and basic information
 - **Task Management**: Full CRUD access to all tasks in organization
 - **Task Assignment**: Can assign tasks to any user
-- **Audit Access**: Can view all audit logs
+- **Audit Access**: Can view audit logs for their actions and organization
 
 #### **Viewer** (Basic Level)
 
 - **Task Management**: Can only manage their own tasks (CRUD)
-- **User Info**: Can view basic user information
+- **Profile Management**: Can view and update their own profile
+- **Password Management**: Can change their own password
+- **User Info**: Can view basic user information within organization
 - **No Assignment Rights**: Cannot assign tasks to others
+- **No Admin Functions**: Cannot create, edit, or delete other users
 
 ### Permission System
 
@@ -259,6 +258,11 @@ export const PERMISSIONS = {
   USER_READ: 'user:read',
   USER_UPDATE: 'user:update',        // Admin+ only
   USER_DELETE: 'user:delete',        // Owner only
+  USER_CHANGE_PASSWORD: 'user:change_password', // Owner only (for others)
+  PROFILE_READ: 'profile:read',      // All users (own profile)
+  PROFILE_UPDATE: 'profile:update',  // All users (own profile)
+  ROLE_READ: 'role:read',            // Admin+ only
+  ROLE_ASSIGN: 'role:assign',        // Admin+ only
   ORG_READ: 'org:read',
   ORG_UPDATE: 'org:update',          // Owner only
   AUDIT_READ: 'audit:read'           // Admin+ only
@@ -308,7 +312,59 @@ const canAccess =
   (user.roleName === 'Viewer' && task.assignedUserId === user.id);
 ```
 
-## 🔌 API Documentation
+## � User Management Interface
+
+### Frontend User Management Features
+
+The dashboard includes a comprehensive user management interface accessible at `/users` route:
+
+#### User Management Component Features
+
+- **User Listing**: Sortable table showing all users in organization
+- **Role-based Visibility**: Users see different options based on their permissions
+- **Search & Filter**: Real-time search by name/email and filter by role
+- **Create User**: Modal form for adding new users with role selection
+- **Edit User**: In-place editing of user details and role assignment
+- **Delete User**: Confirmation dialog for user removal (Owner only)
+- **Status Management**: Toggle user active/inactive status
+
+#### User Interface Permissions
+
+```typescript
+// Permission-based UI rendering
+canCreateUsers(): boolean {
+  return this.currentUser.roleName === 'Owner' || 
+         this.currentUser.roleName === 'Admin';
+}
+
+canEditUser(user: UserResponse): boolean {
+  return (this.currentUser.roleName === 'Owner' || 
+          this.currentUser.roleName === 'Admin') && 
+         user.id !== this.currentUser.id;
+}
+
+canDeleteUser(user: UserResponse): boolean {
+  return this.currentUser.roleName === 'Owner' && 
+         user.id !== this.currentUser.id &&
+         user.roleName !== 'Owner';
+}
+```
+
+#### User Form Validation
+
+- **Email**: Valid email format required, uniqueness checked
+- **Password**: Minimum 6 characters for new users
+- **Names**: Minimum 2 characters for first and last names
+- **Role Selection**: Required, populated from available roles API
+
+#### Profile Management
+
+- **Profile Page**: Accessible to all users at `/profile`
+- **Edit Profile**: Update first name, last name, and email
+- **Change Password**: Secure password update with current password verification
+- **View Only Fields**: Organization and role information (read-only)
+
+## �🔌 API Documentation
 
 ### Authentication Endpoints
 
@@ -417,15 +473,175 @@ const canAccess =
 
 #### GET `/users`
 
-**Purpose**: List users in organization (Admin+ only)
+**Purpose**: List all users in organization (Admin+ only)
+
+**Query Parameters**:
+- `search`: Search users by name or email
+- `role`: Filter by role name
+- `isActive`: Filter by active status
+
+**Response**:
+```json
+[
+  {
+    "id": "user-uuid",
+    "email": "john.doe@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "organizationId": "org-uuid",
+    "roleId": "role-uuid",
+    "roleName": "Admin",
+    "isActive": true,
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-16T14:20:00Z",
+    "organization": {
+      "id": "org-uuid",
+      "name": "Acme Corporation"
+    },
+    "role": {
+      "id": "role-uuid",
+      "name": "Admin",
+      "description": "Can manage users and tasks"
+    }
+  }
+]
+```
 
 #### POST `/users`
 
 **Purpose**: Create new user (Admin+ only)
 
+**Request Body**:
+```json
+{
+  "email": "newuser@example.com",
+  "password": "securePassword123",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "roleId": "role-uuid"
+}
+```
+
+**Response**:
+```json
+{
+  "id": "new-user-uuid",
+  "email": "newuser@example.com",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "organizationId": "org-uuid",
+  "roleId": "role-uuid",
+  "roleName": "Viewer",
+  "isActive": true,
+  "createdAt": "2024-01-17T09:15:00Z",
+  "updatedAt": "2024-01-17T09:15:00Z"
+}
+```
+
+#### GET `/users/:id`
+
+**Purpose**: Get specific user details (Admin+ for others, all for self)
+
+#### PUT `/users/:id`
+
+**Purpose**: Update user information (Admin+ only)
+
+**Request Body**:
+```json
+{
+  "firstName": "Updated First Name",
+  "lastName": "Updated Last Name",
+  "email": "updated.email@example.com",
+  "roleId": "new-role-uuid",
+  "isActive": false
+}
+```
+
+#### DELETE `/users/:id`
+
+**Purpose**: Delete user (Owner only)
+
 #### GET `/users/me`
 
-**Purpose**: Get current user profile
+**Purpose**: Get current user profile (All authenticated users)
+
+**Response**:
+```json
+{
+  "id": "current-user-uuid",
+  "email": "current@example.com",
+  "firstName": "Current",
+  "lastName": "User",
+  "organizationId": "org-uuid",
+  "roleName": "Admin",
+  "isActive": true,
+  "organization": {
+    "id": "org-uuid",
+    "name": "Acme Corporation"
+  },
+  "role": {
+    "id": "role-uuid",
+    "name": "Admin",
+    "description": "Can manage users and tasks",
+    "permissions": ["user:create", "user:read", "user:update", "task:read:all"]
+  }
+}
+```
+
+#### PUT `/users/me`
+
+**Purpose**: Update own profile (All authenticated users)
+
+**Request Body**:
+```json
+{
+  "firstName": "Updated Name",
+  "lastName": "Updated Last",
+  "email": "newemail@example.com"
+}
+```
+
+#### PUT `/users/me/password`
+
+**Purpose**: Change own password (All authenticated users)
+
+**Request Body**:
+```json
+{
+  "currentPassword": "oldPassword123",
+  "newPassword": "newSecurePassword456"
+}
+```
+
+### Role Management Endpoints
+
+#### GET `/roles`
+
+**Purpose**: Get available roles in organization (Admin+ only)
+
+**Response**:
+```json
+[
+  {
+    "id": "role-uuid-1",
+    "name": "Owner",
+    "description": "Full system access",
+    "permissions": ["*"],
+    "organizationId": "org-uuid",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  },
+  {
+    "id": "role-uuid-2", 
+    "name": "Admin",
+    "description": "Can manage users and tasks",
+    "permissions": ["user:create", "user:read", "user:update", "task:read:all"],
+    "organizationId": "org-uuid",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+]
+```
 
 ### Audit Endpoints
 
@@ -454,11 +670,14 @@ npx nx test api --testNamePattern="Auth"
 
 **Key Test Categories**:
 
-- **RBAC Logic**: Role-based access control enforcement
-- **Authentication**: JWT generation, validation, login/logout
+- **RBAC Logic**: Role-based access control enforcement for all operations
+- **Authentication**: JWT generation, validation, login/logout flows
 - **Authorization**: Permission checking and route guards
-- **Data Isolation**: Organization-level data separation
-- **API Endpoints**: Request/response validation
+- **User Management**: CRUD operations, role assignments, profile updates
+- **Password Security**: Secure password hashing and change validation
+- **Data Isolation**: Organization-level data separation across all entities
+- **API Endpoints**: Request/response validation for all user management endpoints
+- **Audit Logging**: Comprehensive tracking of user management operations
 
 ### Frontend Testing (Jest/Karma)
 
@@ -473,9 +692,12 @@ npx nx test dashboard --coverage
 **Key Test Categories**:
 
 - **Component Logic**: State management and user interactions
-- **Role-based UI**: Conditional rendering based on user role
-- **Service Integration**: API communication and error handling
+- **Role-based UI**: Conditional rendering based on user permissions
+- **User Management Forms**: Create/edit/delete user workflows and validation
+- **Profile Management**: User profile editing and password change components
+- **Service Integration**: API communication and error handling for user operations
 - **Route Guards**: Authentication and authorization guards
+- **Data Tables**: User listing, sorting, filtering, and search functionality
 
 ### E2E Testing
 

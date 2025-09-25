@@ -102,6 +102,41 @@ export interface CreateUserDto {
   roleId: string;
 }
 
+export interface UpdateUserDto {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  roleId?: string;
+  isActive?: boolean;
+}
+
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface UserResponse {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  organizationId: string;
+  roleId: string;
+  roleName: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  organization?: {
+    id: string;
+    name: string;
+  };
+  role?: {
+    id: string;
+    name: string;
+    description: string;
+  };
+}
+
 // Response DTOs
 export interface AuthResponse {
   access_token: string;

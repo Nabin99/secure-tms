@@ -22,6 +22,11 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard]
   },
   {
+    path: 'users',
+    loadComponent: () => import('./components/user-management.component').then(m => m.UserManagementComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: '**',
     redirectTo: '/dashboard'
   }
