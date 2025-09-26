@@ -19,22 +19,24 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <!-- Navigation -->
       <nav class="bg-white shadow-lg border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto mobile-spacing">
           <div class="flex justify-between h-16">
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 sm:space-x-4">
               <button
                 (click)="goBack()"
-                class="inline-flex items-center px-4 py-2 border border-slate-200 rounded-xl shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                class="btn-touch inline-flex items-center border border-slate-200 rounded-xl shadow-sm font-medium text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
               >
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
-                Back to Dashboard
+                <span class="hidden sm:inline">Back to Dashboard</span>
+                <span class="sm:hidden">Back</span>
               </button>
               <div class="hidden sm:block w-px h-6 bg-slate-200"></div>
-              <h1 class="text-xl font-bold text-slate-900 flex items-center">
+              <h1 class="text-lg sm:text-xl font-bold text-slate-900 flex items-center">
                 👥
-                <span class="ml-2">User Management</span>
+                <span class="ml-2 hidden sm:inline">User Management</span>
+                <span class="ml-2 sm:hidden">Users</span>
               </h1>
             </div>
             @if (canCreateUsers()) {
@@ -64,40 +66,40 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
       </nav>
 
       <!-- Main content -->
-      <div class="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
-      <!-- Create User Form -->
-      @if (showCreateForm && canCreateUsers()) {
-        <div class="mb-8 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-          <!-- Form Header with Modern Gradient -->
-          <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-5">
-            <h3 class="text-xl font-bold text-white flex items-center">
-              👤
-              <span class="ml-2">Add New User</span>
-            </h3>
-            <p class="mt-2 text-blue-100">
-              Create a new user account with appropriate role and permissions.
-            </p>
-          </div>
+      <div class="max-w-7xl mx-auto mobile-spacing-y mobile-spacing">
+        <!-- Create User Form -->
+        @if (showCreateForm && canCreateUsers()) {
+          <div class="mb-6 sm:mb-8 mobile-card sm:shadow-lg sm:border sm:border-slate-200 sm:overflow-hidden">
+            <!-- Form Header with Modern Gradient -->
+            <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-4 sm:py-5 sm:rounded-t-xl">
+              <h3 class="text-lg sm:text-xl font-bold text-white flex items-center">
+                👤
+                <span class="ml-2">Add New User</span>
+              </h3>
+              <p class="mt-2 text-blue-100 text-sm sm:text-base">
+                Create a new user account with appropriate role and permissions.
+              </p>
+            </div>
 
-          <!-- Form Content -->
-          <div class="p-6">
-            <form [formGroup]="createUserForm" (ngSubmit)="createUser()" class="space-y-6">
-              <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <!-- First Name -->
-                <div>
-                  <label for="firstName" class="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
-                    👤 <span class="ml-2">First Name</span> <span class="text-red-500 ml-1">*</span>
-                  </label>
-                  <div class="relative">
-                    <input
-                      type="text"
-                      id="firstName"
-                      formControlName="firstName"
-                      class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm"
-                      [class.border-red-300]="createUserForm.get('firstName')?.invalid && createUserForm.get('firstName')?.touched"
-                      [class.focus:ring-red-500]="createUserForm.get('firstName')?.invalid && createUserForm.get('firstName')?.touched"
-                      placeholder="Enter first name..."
-                    />
+            <!-- Form Content -->
+            <div class="px-4 sm:px-6 py-4 sm:py-6">
+              <form [formGroup]="createUserForm" (ngSubmit)="createUser()" class="space-y-4 sm:space-y-6">
+                <div class="responsive-form-grid">
+                  <!-- First Name -->
+                  <div>
+                    <label for="firstName" class="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
+                      👤 <span class="ml-2">First Name</span> <span class="text-red-500 ml-1">*</span>
+                    </label>
+                    <div class="relative">
+                      <input
+                        type="text"
+                        id="firstName"
+                        formControlName="firstName"
+                        class="btn-touch w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 text-base sm:text-sm"
+                        [class.border-red-300]="createUserForm.get('firstName')?.invalid && createUserForm.get('firstName')?.touched"
+                        [class.focus:ring-red-500]="createUserForm.get('firstName')?.invalid && createUserForm.get('firstName')?.touched"
+                        placeholder="Enter first name..."
+                      />
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                       <span class="text-slate-400">✏️</span>
                     </div>
@@ -315,16 +317,17 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
       }
 
       <!-- Users List -->
-      <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+      <div class="mobile-card sm:shadow-lg sm:border sm:border-slate-200 sm:overflow-hidden">
         <!-- List Header -->
-        <div class="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200">
-          <div class="flex items-center justify-between">
+        <div class="bg-gradient-to-r from-slate-50 to-slate-100 px-4 sm:px-6 py-4 border-b border-slate-200 sm:rounded-t-xl">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div class="flex items-center">
-              <h3 class="text-lg font-bold text-slate-900 flex items-center">
+              <h3 class="text-responsive-lg font-bold text-slate-900 flex items-center">
                 👥
-                <span class="ml-2">Team Members</span>
+                <span class="ml-2 hidden sm:inline">Team Members</span>
+                <span class="ml-2 sm:hidden">Users</span>
               </h3>
-              <span class="ml-3 px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+              <span class="ml-3 px-3 py-1 bg-blue-100 text-blue-800 text-xs sm:text-sm font-medium rounded-full">
                 {{ filteredUsers.length }} {{ filteredUsers.length === 1 ? 'User' : 'Users' }}
                 @if (filteredUsers.length !== users.length) {
                   <span class="text-blue-600"> of {{ users.length }}</span>
@@ -335,10 +338,10 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
         </div>
 
         <!-- Filters and Search -->
-        <div class="bg-white px-6 py-4 border-b border-slate-200">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white px-4 sm:px-6 py-4 border-b border-slate-200">
+          <div class="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
             <!-- Search -->
-            <div class="lg:col-span-2">
+            <div class="sm:col-span-2 lg:col-span-2">
               <label for="searchInput" class="block text-sm font-medium text-slate-700 mb-2">
                 🔍 Search Users
               </label>
@@ -347,8 +350,8 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                 type="text"
                 [(ngModel)]="searchTerm"
                 (ngModelChange)="onSearchChange()"
-                placeholder="Search by name, email, role, or organization..."
-                class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Search by name, email, role..."
+                class="btn-touch w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-sm"
               />
             </div>
 
@@ -361,7 +364,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                 id="roleFilter"
                 [(ngModel)]="selectedRoleFilter"
                 (ngModelChange)="onRoleFilterChange()"
-                class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="btn-touch w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-sm"
               >
                 <option value="">All Roles</option>
                 @for (role of availableRoles; track role.id) {
@@ -379,7 +382,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                 id="organizationFilter"
                 [(ngModel)]="selectedOrganizationFilter"
                 (ngModelChange)="onOrganizationFilterChange()"
-                class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="btn-touch w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-sm"
               >
                 <option value="">All Organizations</option>
                 @for (org of availableOrganizations; track org.id) {
@@ -390,7 +393,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
           </div>
 
           <!-- Second row for status filter -->
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
             <!-- Status Filter -->
             <div>
               <label for="statusFilter" class="block text-sm font-medium text-slate-700 mb-2">
@@ -521,11 +524,116 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
             </div>
           </div>
         } @else {
-          <div class="divide-y divide-slate-100">
+          <div class="space-y-4 sm:divide-y sm:divide-slate-100 sm:space-y-0">
             @for (user of filteredUsers; track user.id) {
-              <div class="p-6 hover:bg-slate-50 transition-colors duration-150">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-4">
+              <div class="mobile-card sm:p-6 sm:hover:bg-slate-50 sm:transition-colors sm:duration-150 sm:rounded-none">
+                <!-- Mobile Layout: Full width, stacked content -->
+                <div class="block sm:hidden">
+                  <div class="flex items-center space-x-4 mb-4">
+                    <!-- User Avatar -->
+                    <div class="flex-shrink-0">
+                      <div class="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                        {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+                      </div>
+                    </div>
+                    
+                    <!-- Name and Status -->
+                    <div class="flex-1 min-w-0">
+                      <h3 class="text-lg font-semibold text-slate-900 truncate mb-1">
+                        {{ user.firstName }} {{ user.lastName }}
+                      </h3>
+                      @if (!user.isActive) {
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                          🚫 Inactive
+                        </span>
+                      } @else {
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                          ✅ Active
+                        </span>
+                      }
+                    </div>
+                  </div>
+                  
+                  <!-- User Details - Mobile Stacked -->
+                  <div class="space-y-3 mb-4">
+                    <div class="flex items-center text-sm text-slate-600">
+                      <span class="w-6 text-center">📧</span>
+                      <span class="ml-2 break-all">{{ user.email }}</span>
+                    </div>
+                    <div class="flex items-center text-sm text-slate-600">
+                      <span class="w-6 text-center">🎭</span>
+                      <span class="ml-2">{{ user.roleName }}
+                        @if (!user.roleName) {
+                          <span class="text-red-500 ml-2">[MISSING roleName]</span>
+                        }
+                      </span>
+                    </div>
+                    <div class="flex items-center text-sm text-slate-600">
+                      <span class="w-6 text-center">🏢</span>
+                      <span class="ml-2">{{ user.organization?.name || 'No Organization' }}</span>
+                    </div>
+                    @if (user.createdAt) {
+                      <div class="flex items-center text-sm text-slate-600">
+                        <span class="w-6 text-center">📅</span>
+                        <span class="ml-2">{{ user.createdAt | date:'MMM d, y' }}</span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Action Buttons - Mobile -->
+                  @if (canUpdateUsers() || canDeactivateUsers() || canDeleteUsers()) {
+                    <div class="flex items-center justify-center space-x-3 pt-4 border-t border-slate-100">
+                      @if (canUpdateUsers()) {
+                        <button
+                          (click)="editUser(user)"
+                          class="flex-1 inline-flex items-center justify-center px-4 py-3 border border-slate-200 rounded-lg text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-150 touch-friendly text-sm font-medium"
+                          title="Edit user"
+                        >
+                          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                          </svg>
+                          Edit
+                        </button>
+                      }
+                      @if (canDeactivateUsers()) {
+                        <button
+                          (click)="toggleUserStatus(user)"
+                          [class]="user.isActive 
+                            ? 'flex-1 inline-flex items-center justify-center px-4 py-3 border border-slate-200 rounded-lg text-slate-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-150 touch-friendly text-sm font-medium'
+                            : 'flex-1 inline-flex items-center justify-center px-4 py-3 border border-slate-200 rounded-lg text-slate-600 hover:text-green-600 hover:border-green-300 hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-150 touch-friendly text-sm font-medium'"
+                          [title]="user.isActive ? 'Deactivate user' : 'Activate user'"
+                        >
+                          @if (user.isActive) {
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                            </svg>
+                            Deactivate
+                          } @else {
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Activate
+                          }
+                        </button>
+                      }
+                      @if (canDeleteUsers() && user.id !== currentUser?.id) {
+                        <button
+                          (click)="deleteUser(user)"
+                          class="flex-none inline-flex items-center justify-center p-3 border border-slate-200 rounded-lg text-slate-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-150 touch-friendly"
+                          title="Delete user"
+                        >
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                          </svg>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <!-- Desktop Layout: Horizontal layout -->
+                <div class="hidden sm:flex sm:items-center sm:justify-between">
+                  <div class="flex items-center space-x-4 flex-1 min-w-0">
                     <!-- User Avatar -->
                     <div class="flex-shrink-0">
                       <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
@@ -571,7 +679,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                     </div>
                   </div>
 
-                  <!-- Action Buttons -->
+                  <!-- Action Buttons - Desktop -->
                   @if (canUpdateUsers() || canDeactivateUsers() || canDeleteUsers()) {
                     <div class="flex items-center space-x-2">
                       @if (canUpdateUsers()) {
@@ -628,32 +736,32 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
     <!-- Edit User Modal -->
     @if (showEditModal && selectedUser) {
       <div class="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-        <div class="relative bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden">
+        <div class="relative bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md max-h-[90vh] overflow-hidden">
           <!-- Modal Header -->
-          <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-5">
+          <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-4 sm:py-5">
             <div class="flex items-center justify-between">
-              <h3 class="text-xl font-bold text-white flex items-center">
+              <h3 class="text-lg sm:text-xl font-bold text-white flex items-center">
                 ✏️
                 <span class="ml-2">Edit User</span>
               </h3>
               <button
                 (click)="closeEditModal()"
-                class="text-white hover:text-slate-200 focus:outline-none"
+                class="text-white hover:text-slate-200 focus:outline-none p-1 touch-friendly"
               >
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
               </button>
             </div>
-            <p class="mt-2 text-blue-100">
+            <p class="mt-2 text-blue-100 text-sm">
               Update user information and permissions.
             </p>
           </div>
 
           <!-- Modal Content -->
-          <div class="p-6">
-            <form [formGroup]="editUserForm" (ngSubmit)="updateUser()" class="space-y-6">
-              <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div class="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            <form [formGroup]="editUserForm" (ngSubmit)="updateUser()" class="space-y-4 sm:space-y-6">
+              <div class="responsive-form-grid">
                 <!-- First Name -->
                 <div>
                   <label for="editFirstName" class="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
@@ -664,7 +772,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                       type="text"
                       id="editFirstName"
                       formControlName="firstName"
-                      class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm"
+                      class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm touch-friendly"
                       placeholder="Enter first name..."
                     />
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -683,7 +791,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                       type="text"
                       id="editLastName"
                       formControlName="lastName"
-                      class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm"
+                      class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm touch-friendly"
                       placeholder="Enter last name..."
                     />
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3">
