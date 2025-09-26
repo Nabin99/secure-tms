@@ -19,151 +19,251 @@ import { AuditLogComponent } from './audit-log.component';
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, DragDropModule, TaskFormComponent, TaskItemComponent, ConfirmationModalComponent, AuditLogComponent],
+
   template: `
     <div class="min-h-screen bg-gray-50">
       <!-- Navigation -->
-      <nav class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav class="bg-white shadow relative">
+        <div class="max-w-7xl mx-auto mobile-spacing">
           <div class="flex justify-between h-16">
-            <div class="flex items-center space-x-4">
-              <h1 class="text-xl font-semibold text-gray-900">Task Management System</h1>
+            <!-- Logo and mobile menu toggle -->
+            <div class="flex items-center">
+              <h1 class="text-lg sm:text-xl font-semibold text-gray-900 truncate">
+                <span class="hidden sm:inline">Task Management System</span>
+                <span class="sm:hidden">TMS</span>
+              </h1>
+              
+              <!-- User info on mobile (condensed) -->
               @if (currentUser$ | async; as cu) {
-                <div class="hidden md:flex items-center text-xs text-gray-600 space-x-2 pl-4 border-l border-gray-200">
+                <div class="ml-4 flex items-center text-xs text-gray-600 sm:hidden">
+                  <span class="px-2 py-1 text-xs rounded bg-indigo-50 text-indigo-700 font-medium">{{ cu.roleName }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Desktop navigation -->
+            <div class="hidden md:flex items-center space-x-3">
+              @if (currentUser$ | async; as cu) {
+                <div class="hidden lg:flex items-center text-xs text-gray-600 space-x-2 pr-4 border-r border-gray-200">
                   <span class="font-medium text-gray-700">Org:</span>
-                  <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold" [title]="cu.organizationId">{{ cu.organizationName || 'Unknown Org' }}</span>
+                  <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold" [title]="cu.organizationId">{{ cu.organizationName || 'Unknown' }}</span>
                   <span class="font-medium text-gray-700">Role:</span>
                   <span class="px-2 py-0.5 rounded" [ngClass]="roleBadgeClass(cu.roleName)">{{ cu.roleName }}</span>
                 </div>
               }
-            </div>
-            <div class="flex items-center space-x-4">
+              
               @if (currentUser$ | async; as currentUser) {
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-2">
                   @if (canManageUsers()) {
                     <button
                       (click)="navigateToUsers()"
-                      class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      class="btn-touch inline-flex items-center border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
-                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                       </svg>
-                      Users
+                      <span class="hidden lg:inline">Users</span>
                     </button>
                   }
                   @if (canManageOrganizations()) {
                     <button
                       (click)="navigateToOrganizations()"
-                      class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      class="btn-touch inline-flex items-center border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
-                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h1M9 7h1m1 0h1M9 11h1m1 0h1m1 4h1"></path>
                       </svg>
-                      Organizations
+                      <span class="hidden lg:inline">Orgs</span>
                     </button>
                   }
                   @if (canViewAuditLog()) {
                     <button
                       (click)="navigateToAuditLog()"
-                      class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      class="btn-touch inline-flex items-center border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
-                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                       </svg>
-                      Audit Log
+                      <span class="hidden lg:inline">Audit</span>
                     </button>
                   }
-                  <div class="text-sm">
-                    <p class="text-gray-700 font-medium">{{ currentUser.email }}</p>
+                  <div class="hidden lg:block text-sm pl-2 border-l border-gray-200">
+                    <p class="text-gray-700 font-medium text-xs">{{ currentUser.email }}</p>
                     <p class="text-gray-500 text-xs">{{ currentUser.roleName }}</p>
                   </div>
                   <button
                     (click)="logout()"
-                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    class="btn-touch inline-flex items-center border border-transparent text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
-                    Logout
+                    <span class="hidden lg:inline">Logout</span>
                   </button>
                 </div>
               }
             </div>
+
+            <!-- Mobile menu button -->
+            <div class="md:hidden">
+              @if (currentUser$ | async; as currentUser) {
+                <button
+                  (click)="mobileMenuOpen = !mobileMenuOpen"
+                  class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                  [attr.aria-expanded]="mobileMenuOpen"
+                >
+                  <span class="sr-only">Open main menu</span>
+                  <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    @if (!mobileMenuOpen) {
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    } @else {
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    }
+                  </svg>
+                </button>
+              }
+            </div>
           </div>
         </div>
+
+        <!-- Mobile menu -->
+        @if (mobileMenuOpen) {
+          @if (currentUser$ | async; as currentUser) {
+          <div class="mobile-nav-menu md:hidden">
+            <div class="px-4 py-3 border-b border-gray-200">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center">
+                    <span class="text-white font-medium text-sm">{{ currentUser.email.charAt(0).toUpperCase() }}</span>
+                  </div>
+                </div>
+                <div class="ml-3">
+                  <div class="text-base font-medium text-gray-800">{{ currentUser.email }}</div>
+                  <div class="text-sm text-gray-500">{{ currentUser.roleName }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="py-2">
+              @if (canManageUsers()) {
+                <button
+                  (click)="navigateToUsers(); mobileMenuOpen = false"
+                  class="mobile-nav-item w-full text-left"
+                >
+                  <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                  </svg>
+                  Users
+                </button>
+              }
+              @if (canManageOrganizations()) {
+                <button
+                  (click)="navigateToOrganizations(); mobileMenuOpen = false"
+                  class="mobile-nav-item w-full text-left"
+                >
+                  <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h1M9 7h1m1 0h1M9 11h1m1 0h1m1 4h1"></path>
+                  </svg>
+                  Organizations
+                </button>
+              }
+              @if (canViewAuditLog()) {
+                <button
+                  (click)="navigateToAuditLog(); mobileMenuOpen = false"
+                  class="mobile-nav-item w-full text-left"
+                >
+                  <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  Audit Log
+                </button>
+              }
+              <button
+                (click)="logout(); mobileMenuOpen = false"
+                class="mobile-nav-item w-full text-left text-red-700 hover:bg-red-50"
+              >
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                Logout
+              </button>
+            </div>
+          </div>
+          }
+        }
       </nav>
 
       <!-- Demo Quick Switch (only show on dev & if logged out) -->
       @if ((currentUser$ | async) === null) {
-        <div class="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 text-white py-3 text-center text-sm">
-          <span class="font-medium">Quick Demo Login:</span>
-          <button (click)="quickLogin('owner@test.com')" class="ml-2 underline hover:text-yellow-200">Owner</button>
-          <button (click)="quickLogin('eng.admin@test.com')" class="ml-2 underline hover:text-yellow-200">Child Admin</button>
-          <button (click)="quickLogin('viewer@test.com')" class="ml-2 underline hover:text-yellow-200">Viewer</button>
+        <div class="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 text-white mobile-spacing-y text-center text-sm">
+          <div class="max-w-7xl mx-auto mobile-spacing">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 sm:gap-4">
+              <span class="font-medium">Quick Demo Login:</span>
+              <div class="flex flex-wrap justify-center gap-2">
+                <button (click)="quickLogin('owner@test.com')" class="btn-touch bg-white/20 text-white hover:bg-white/30 border-white/30">Owner</button>
+                <button (click)="quickLogin('eng.admin@test.com')" class="btn-touch bg-white/20 text-white hover:bg-white/30 border-white/30">Child Admin</button>
+                <button (click)="quickLogin('viewer@test.com')" class="btn-touch bg-white/20 text-white hover:bg-white/30 border-white/30">Viewer</button>
+              </div>
+            </div>
+          </div>
         </div>
       }
 
       <!-- Main content -->
-      <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto mobile-spacing-y mobile-spacing">
 
         <!-- Stats -->
-        <div class="mb-8">
-          <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-              <div class="p-5">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
-                      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                      </svg>
-                    </div>
+        <div class="mb-6 sm:mb-8">
+          <div class="responsive-grid">
+            <div class="mobile-card">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-500 rounded-md flex items-center justify-center">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
                   </div>
-                  <div class="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt class="text-sm font-medium text-gray-500 truncate">Total Tasks</dt>
-                      <dd class="text-lg font-medium text-gray-900">{{ filteredTasks.length }}</dd>
-                    </dl>
-                  </div>
+                </div>
+                <div class="ml-4 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Total Tasks</dt>
+                    <dd class="text-xl sm:text-2xl font-semibold text-gray-900">{{ filteredTasks.length }}</dd>
+                  </dl>
                 </div>
               </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-              <div class="p-5">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                      </svg>
-                    </div>
+            <div class="mobile-card">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-500 rounded-md flex items-center justify-center">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
                   </div>
-                  <div class="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt class="text-sm font-medium text-gray-500 truncate">In Progress</dt>
-                      <dd class="text-lg font-medium text-gray-900">{{ getFilteredTasksByStatus('InProgress').length }}</dd>
-                    </dl>
-                  </div>
+                </div>
+                <div class="ml-4 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">In Progress</dt>
+                    <dd class="text-xl sm:text-2xl font-semibold text-gray-900">{{ getFilteredTasksByStatus('InProgress').length }}</dd>
+                  </dl>
                 </div>
               </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-              <div class="p-5">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                    </div>
+            <div class="mobile-card">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-md flex items-center justify-center">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
                   </div>
-                  <div class="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt class="text-sm font-medium text-gray-500 truncate">Completed</dt>
-                      <dd class="text-lg font-medium text-gray-900">{{ getFilteredTasksByStatus('Done').length }}</dd>
-                    </dl>
-                  </div>
+                </div>
+                <div class="ml-4 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Completed</dt>
+                    <dd class="text-xl sm:text-2xl font-semibold text-gray-900">{{ getFilteredTasksByStatus('Done').length }}</dd>
+                  </dl>
                 </div>
               </div>
             </div>
@@ -171,18 +271,18 @@ import { AuditLogComponent } from './audit-log.component';
         </div>
 
         <!-- Tasks section -->
-        <div class="bg-white shadow overflow-hidden sm:rounded-md">
-          <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+        <div class="mobile-card sm:shadow sm:overflow-hidden sm:rounded-md">
+          <div class="mobile-card-header">
             <div>
-              <h3 class="text-lg leading-6 font-medium text-gray-900">Tasks</h3>
-              <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              <h3 class="text-responsive-lg leading-6 font-semibold text-gray-900">Tasks</h3>
+              <p class="mt-1 max-w-2xl text-responsive text-gray-500">
                 Manage your tasks and track progress
               </p>
             </div>
             @if (canCreateTasks()) {
               <button
                 (click)="showCreateForm = !showCreateForm"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                class="btn-touch w-full sm:w-auto inline-flex items-center justify-center border border-transparent text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 {{ showCreateForm ? 'Cancel' : 'Add Task' }}
               </button>
@@ -190,10 +290,10 @@ import { AuditLogComponent } from './audit-log.component';
           </div>
 
           <!-- Filters and Search -->
-          <div class="px-6 py-6 bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50 border-t border-slate-200/60">
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+          <div class="px-0 sm:px-6 py-4 sm:py-6 bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50 border-t border-slate-200/60">
+            <div class="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-5 sm:gap-4 lg:gap-6">
               <!-- Search -->
-              <div class="group">
+              <div class="group sm:col-span-2 lg:col-span-1">
                 <label for="search" class="block text-sm font-semibold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">
                   🔍 Search Tasks
                 </label>
@@ -202,7 +302,7 @@ import { AuditLogComponent } from './audit-log.component';
                   id="search"
                   [(ngModel)]="searchTerm"
                   (input)="applyFilters()"
-                  placeholder="Search by title or description..."
+                  placeholder="Search by title..."
                   class="block w-full px-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-slate-300"
                 />
               </div>
@@ -286,7 +386,7 @@ import { AuditLogComponent } from './audit-log.component';
 
           <!-- Create task form -->
           @if (showCreateForm && canCreateTasks()) {
-            <div class="border-t border-gray-200 px-4 py-5 sm:px-6 bg-gray-50">
+            <div class="border-t border-gray-200 px-0 sm:px-6 py-4 sm:py-5 bg-gray-50">
               <app-task-form 
                 (taskCreated)="onTaskCreated($event)"
                 (cancelled)="showCreateForm = false">
@@ -302,7 +402,7 @@ import { AuditLogComponent } from './audit-log.component';
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Loading tasks...
+                <span class="text-responsive">Loading tasks...</span>
               </div>
             </div>
           } @else if (filteredTasks.length === 0) {
@@ -310,8 +410,8 @@ import { AuditLogComponent } from './audit-log.component';
               <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
               </svg>
-              <h3 class="mt-2 text-sm font-medium text-gray-900">No tasks found</h3>
-              <p class="mt-1 text-sm text-gray-500">
+              <h3 class="mt-2 text-responsive font-medium text-gray-900">No tasks found</h3>
+              <p class="mt-1 text-responsive text-gray-500">
                 @if (searchTerm || selectedCategory || selectedPriority) {
                   Try adjusting your filters to see more tasks.
                 } @else {
@@ -321,13 +421,16 @@ import { AuditLogComponent } from './audit-log.component';
             </div>
           } @else {
             <!-- Kanban Board View -->
-            <div class="p-4">
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="p-0 sm:p-4">
+              <!-- Mobile: Stack view, Desktop: Grid view -->
+              <div class="flex flex-col space-y-6 md:grid md:grid-cols-3 md:gap-6 md:space-y-0">
                 <!-- Todo Column -->
                 <div class="bg-gray-50 rounded-lg p-4">
-                  <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <h3 class="text-responsive-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <div class="w-3 h-3 bg-gray-400 rounded-full mr-2"></div>
-                    Todo ({{ getFilteredTasksByStatus('Todo').length }})
+                    <span class="hidden sm:inline">Todo</span>
+                    <span class="sm:hidden">To Do</span>
+                    <span class="ml-2 text-sm font-medium text-gray-600">({{ getFilteredTasksByStatus('Todo').length }})</span>
                   </h3>
                   <div
                     cdkDropList
@@ -341,7 +444,7 @@ import { AuditLogComponent } from './audit-log.component';
                       <div 
                         cdkDrag
                         [cdkDragData]="task"
-                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move hover:shadow-md transition-shadow"
+                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 cursor-move hover:shadow-md transition-shadow"
                       >
                         <app-task-item 
                           [task]="task"
@@ -353,14 +456,21 @@ import { AuditLogComponent } from './audit-log.component';
                         </app-task-item>
                       </div>
                     }
+                    @if (getFilteredTasksByStatus('Todo').length === 0) {
+                      <div class="text-center py-8 text-gray-400">
+                        <p class="text-responsive">No tasks in Todo</p>
+                      </div>
+                    }
                   </div>
                 </div>
 
                 <!-- In Progress Column -->
                 <div class="bg-blue-50 rounded-lg p-4">
-                  <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <h3 class="text-responsive-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    In Progress ({{ getFilteredTasksByStatus('InProgress').length }})
+                    <span class="hidden sm:inline">In Progress</span>
+                    <span class="sm:hidden">Active</span>
+                    <span class="ml-2 text-sm font-medium text-gray-600">({{ getFilteredTasksByStatus('InProgress').length }})</span>
                   </h3>
                   <div
                     cdkDropList
@@ -374,7 +484,7 @@ import { AuditLogComponent } from './audit-log.component';
                       <div 
                         cdkDrag
                         [cdkDragData]="task"
-                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move hover:shadow-md transition-shadow"
+                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 cursor-move hover:shadow-md transition-shadow"
                       >
                         <app-task-item 
                           [task]="task"
@@ -386,14 +496,20 @@ import { AuditLogComponent } from './audit-log.component';
                         </app-task-item>
                       </div>
                     }
+                    @if (getFilteredTasksByStatus('InProgress').length === 0) {
+                      <div class="text-center py-8 text-gray-400">
+                        <p class="text-responsive">No active tasks</p>
+                      </div>
+                    }
                   </div>
                 </div>
 
                 <!-- Done Column -->
                 <div class="bg-green-50 rounded-lg p-4">
-                  <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <h3 class="text-responsive-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Done ({{ getFilteredTasksByStatus('Done').length }})
+                    <span>Done</span>
+                    <span class="ml-2 text-sm font-medium text-gray-600">({{ getFilteredTasksByStatus('Done').length }})</span>
                   </h3>
                   <div
                     cdkDropList
@@ -407,7 +523,7 @@ import { AuditLogComponent } from './audit-log.component';
                       <div 
                         cdkDrag
                         [cdkDragData]="task"
-                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move hover:shadow-md transition-shadow"
+                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 cursor-move hover:shadow-md transition-shadow opacity-75"
                       >
                         <app-task-item 
                           [task]="task"
@@ -419,6 +535,11 @@ import { AuditLogComponent } from './audit-log.component';
                         </app-task-item>
                       </div>
                     }
+                    @if (getFilteredTasksByStatus('Done').length === 0) {
+                      <div class="text-center py-8 text-gray-400">
+                        <p class="text-responsive">No completed tasks</p>
+                      </div>
+                    }
                   </div>
                 </div>
               </div>
@@ -427,13 +548,13 @@ import { AuditLogComponent } from './audit-log.component';
         </div>
       </div>
 
-        <!-- Audit Log Section (for Owners/Admins) -->
-        @if (canViewAuditLogs()) {
-          <div class="mt-8">
-            <app-audit-log></app-audit-log>
-          </div>
-        }
-      </div>
+      <!-- Audit Log Section (for Owners/Admins) -->
+      @if (canViewAuditLogs()) {
+        <div class="mt-6 sm:mt-8 max-w-7xl mx-auto mobile-spacing">
+          <app-audit-log></app-audit-log>
+        </div>
+      }
+    </div>
 
     <!-- Logout Confirmation Modal -->
     <app-confirmation-modal
@@ -457,6 +578,7 @@ export class DashboardComponent implements OnInit {
   currentUser$ = this.authService.currentUser$;
   private currentUser = this.authService.currentUserValue;
   showLogoutModal = false;
+  mobileMenuOpen = false;
   tasks: TaskResponse[] = [];
   filteredTasks: TaskResponse[] = [];
   accessibleOrganizations: OrganizationResponse[] = [];

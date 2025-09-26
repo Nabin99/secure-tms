@@ -17,50 +17,51 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
   <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
     <nav class="bg-white shadow-lg border-b border-slate-200">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center space-x-4">
-            <button (click)="goBack()" class="inline-flex items-center px-4 py-2 border border-slate-200 rounded-xl shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:h-16 py-3 sm:py-0 space-y-3 sm:space-y-0">
+          <div class="flex items-center justify-between sm:justify-start space-x-4">
+            <button (click)="goBack()" class="inline-flex items-center px-4 py-2 border border-slate-200 rounded-xl shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition touch-friendly">
               <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
               Back
             </button>
             <div class="hidden sm:block w-px h-6 bg-slate-200"></div>
-            <h1 class="text-xl font-bold text-slate-900 flex items-center">🏢<span class="ml-2">Organization Management</span></h1>
+            <h1 class="text-lg sm:text-xl font-bold text-slate-900 flex items-center">🏢<span class="ml-2 hidden xs:inline">Organization Management</span><span class="ml-2 xs:hidden">Organizations</span></h1>
           </div>
-          <div class="flex items-center space-x-3" *ngIf="canCreateOrgs()">
-            <button (click)="toggleCreateForm()" [class]="showCreateForm ? 'inline-flex items-center px-5 py-2 rounded-xl text-sm font-medium bg-white border border-slate-300 text-slate-700 shadow hover:bg-slate-50' : 'inline-flex items-center px-5 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow hover:from-blue-700 hover:to-indigo-700'">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="flex items-center justify-end sm:justify-start space-x-2 sm:space-x-3" *ngIf="canCreateOrgs()">
+            <button (click)="toggleCreateForm()" [class]="showCreateForm ? 'inline-flex items-center px-4 sm:px-5 py-2 rounded-xl text-sm font-medium bg-white border border-slate-300 text-slate-700 shadow hover:bg-slate-50 touch-friendly' : 'inline-flex items-center px-4 sm:px-5 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow hover:from-blue-700 hover:to-indigo-700 touch-friendly'">
+              <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path *ngIf="!showCreateForm" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 <path *ngIf="showCreateForm" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              {{ showCreateForm ? 'Cancel' : 'New Organization' }}
+              <span class="hidden sm:inline">{{ showCreateForm ? 'Cancel' : 'New Organization' }}</span>
+              <span class="sm:hidden">{{ showCreateForm ? 'Cancel' : 'New Org' }}</span>
             </button>
-            <button (click)="refreshHierarchy()" class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium bg-white border border-slate-300 text-slate-700 shadow hover:bg-slate-50">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 4l-6 6M4 20l6-6"/></svg>
-              Refresh
+            <button (click)="refreshHierarchy()" class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium bg-white border border-slate-300 text-slate-700 shadow hover:bg-slate-50 touch-friendly">
+              <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 4l-6 6M4 20l6-6"/></svg>
+              <span class="hidden sm:inline">Refresh</span>
             </button>
           </div>
         </div>
       </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div *ngIf="message()" class="mb-6"><div class="rounded-xl p-4 flex items-start gap-3 text-sm" [ngClass]="message()!.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path *ngIf="message()!.type==='success'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/><path *ngIf="message()!.type==='error'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg><div class="flex-1">{{ message()!.text }}</div><button (click)="clearMessage()" class="text-slate-400 hover:text-slate-600">✕</button></div></div>
+    <div class="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+      <div *ngIf="message()" class="mb-4 sm:mb-6"><div class="rounded-xl p-4 flex items-start gap-3 text-sm" [ngClass]="message()!.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path *ngIf="message()!.type==='success'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/><path *ngIf="message()!.type==='error'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg><div class="flex-1">{{ message()!.text }}</div><button (click)="clearMessage()" class="text-slate-400 hover:text-slate-600 touch-friendly">✕</button></div></div>
 
-      <div *ngIf="showCreateForm" class="mb-10 bg-white shadow-lg rounded-xl border border-slate-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-5 border-b border-slate-200">
-          <h3 class="text-xl font-bold text-white flex items-center">
+      <div *ngIf="showCreateForm" class="mb-6 sm:mb-10 mobile-card sm:shadow-lg sm:border sm:border-slate-200 sm:overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200">
+          <h3 class="text-lg sm:text-xl font-bold text-white flex items-center">
             {{ editingOrganization() ? '✏️' : '🏢' }}
             <span class="ml-2">{{ editingOrganization() ? 'Edit Organization' : 'Create New Organization' }}</span>
           </h3>
-          <p class="mt-2 text-blue-100">
+          <p class="mt-2 text-blue-100 text-sm">
             {{ editingOrganization() ? 'Update the organization details below.' : 'Fill in the details to create a new organization.' }}
           </p>
         </div>
         
-        <form [formGroup]="organizationForm" (ngSubmit)="onSubmit()" class="p-6">
-          <div class="space-y-6">
+        <form [formGroup]="organizationForm" (ngSubmit)="onSubmit()" class="p-4 sm:p-6">
+          <div class="space-y-4 sm:space-y-6">
             <!-- Main Fields Grid -->
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div class="responsive-form-grid">
               <!-- Name Field -->
               <div>
                 <label for="org-name" class="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
@@ -71,7 +72,7 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
                     type="text"
                     id="org-name"
                     formControlName="name"
-                    class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm"
+                    class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm touch-friendly"
                     placeholder="Enter organization name..."
                   />
                   <div class="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -95,7 +96,7 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
                     id="org-description"
                     formControlName="description"
                     rows="3"
-                    class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm resize-none"
+                    class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm resize-none touch-friendly"
                     placeholder="Optional organization description..."
                   ></textarea>
                   <div class="absolute bottom-3 right-3">
@@ -106,7 +107,7 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
             </div>
 
             <!-- Level and Parent Grid -->
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div class="responsive-form-grid">
               <!-- Level Field -->
               <div>
                 <label for="org-level" class="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
@@ -117,7 +118,7 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
                     id="org-level"
                     formControlName="level"
                     (change)="onLevelChange()"
-                    class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm appearance-none cursor-pointer"
+                    class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm appearance-none cursor-pointer touch-friendly"
                   >
                     <option value="1">🏢 Parent Organization (Level 1)</option>
                     <option value="2">🏬 Child Organization (Level 2)</option>
@@ -137,7 +138,7 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
                   <select
                     id="org-parent"
                     formControlName="parentId"
-                    class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm appearance-none cursor-pointer"
+                    class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm appearance-none cursor-pointer touch-friendly"
                   >
                     <option value="">Choose parent organization...</option>
                     <option *ngFor="let p of parentOrganizations()" [value]="p.id">
@@ -174,11 +175,11 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end space-y-reverse space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
               <button
                 type="button"
                 (click)="cancelForm()"
-                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 touch-friendly"
               >
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -188,7 +189,7 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
               <button
                 type="submit"
                 [disabled]="organizationForm.invalid || isSubmitting()"
-                class="inline-flex items-center px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                class="inline-flex items-center justify-center px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 touch-friendly"
               >
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path *ngIf="editingOrganization()" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -201,48 +202,59 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
         </form>
       </div>
 
-      <div class="mb-10 bg-white shadow rounded-2xl border border-slate-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 flex justify-between bg-gradient-to-r from-slate-50 to-slate-100"><h2 class="text-lg font-semibold text-slate-800">📂 Hierarchy</h2><span class="text-xs text-slate-500" *ngIf="!isLoading()">{{ organizations().length }} root</span></div>
-        <div *ngIf="isLoading()" class="p-10 text-center text-slate-500 text-sm">Loading...</div>
-        <div *ngIf="!isLoading() && !organizations().length" class="p-12 text-center text-slate-600">No organizations.</div>
+      <div class="mb-6 sm:mb-10 mobile-card sm:shadow sm:rounded-2xl sm:border sm:border-slate-200 sm:overflow-hidden">
+        <div class="px-4 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between bg-gradient-to-r from-slate-50 to-slate-100 space-y-2 sm:space-y-0">
+          <h2 class="text-lg font-semibold text-slate-800">📂 Hierarchy</h2>
+          <span class="text-xs text-slate-500" *ngIf="!isLoading()">{{ organizations().length }} root organization{{ organizations().length !== 1 ? 's' : '' }}</span>
+        </div>
+        <div *ngIf="isLoading()" class="p-6 sm:p-10 text-center text-slate-500 text-sm">Loading...</div>
+        <div *ngIf="!isLoading() && !organizations().length" class="p-8 sm:p-12 text-center text-slate-600">No organizations.</div>
         <div *ngIf="!isLoading() && organizations().length" class="divide-y divide-slate-100">
-          <div *ngFor="let parent of organizations()" class="p-6 hover:bg-slate-50 transition">
-            <div class="flex justify-between">
-              <div>
-                <div class="flex items-center gap-3">
-                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600 font-semibold">P</span>
-                  <h3 class="font-semibold text-slate-800 text-base">{{ parent.name }}</h3>
-                  <span class="px-2 py-0.5 rounded-full text-xs" [ngClass]="parent.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">{{ parent.isActive?'Active':'Inactive' }}</span>
-                  <span class="px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-700">Level 1</span>
-                  <span *ngIf="parent.children?.length" class="px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700">{{ parent.children?.length }} Child{{ (parent.children?.length||0)>1?'ren':'' }}</span>
+          <div *ngFor="let parent of organizations()" class="p-4 sm:p-6 hover:bg-slate-50 transition">
+            <div class="flex flex-col sm:flex-row sm:justify-between space-y-4 sm:space-y-0">
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-2 sm:mb-0">
+                  <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600 font-semibold">P</span>
+                    <h3 class="font-semibold text-slate-800 text-base">{{ parent.name }}</h3>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-0.5 rounded-full text-xs" [ngClass]="parent.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">{{ parent.isActive?'Active':'Inactive' }}</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-700">Level 1</span>
+                    <span *ngIf="parent.children?.length" class="px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700">{{ parent.children?.length }} Child{{ (parent.children?.length||0)>1?'ren':'' }}</span>
+                  </div>
                 </div>
                 <p *ngIf="parent.description" class="mt-2 text-sm text-slate-600 max-w-xl">{{ parent.description }}</p>
-                <div class="mt-2 flex flex-wrap gap-4 text-xs text-slate-500">
+                <div class="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
                   <span>Created: {{ parent.createdAt | date:'short' }}</span>
-                  <button class="text-blue-600 hover:text-blue-700" (click)="viewStats(parent)">Stats</button>
-                  <button *ngIf="canUpdateOrgs()" class="text-indigo-600 hover:text-indigo-700" (click)="editOrganization(parent)">Edit</button>
-                  <button *ngIf="canDeleteOrgs()" class="text-red-600 hover:text-red-700" (click)="deleteOrganization(parent)" [disabled]="parent.children?.length">Delete</button>
-                  <button *ngIf="canCreateOrgs() && parent.children?.length===0" class="text-emerald-600 hover:text-emerald-700" (click)="startCreateChild(parent)">Add Child</button>
+                  <button class="text-blue-600 hover:text-blue-700 touch-friendly" (click)="viewStats(parent)">Stats</button>
+                  <button *ngIf="canUpdateOrgs()" class="text-indigo-600 hover:text-indigo-700 touch-friendly" (click)="editOrganization(parent)">Edit</button>
+                  <button *ngIf="canDeleteOrgs()" class="text-red-600 hover:text-red-700 touch-friendly" (click)="deleteOrganization(parent)" [disabled]="parent.children?.length">Delete</button>
+                  <button *ngIf="canCreateOrgs() && parent.children?.length===0" class="text-emerald-600 hover:text-emerald-700 touch-friendly" (click)="startCreateChild(parent)">Add Child</button>
                 </div>
               </div>
-              <button *ngIf="parent.children?.length" (click)="parent.expanded = !parent.expanded" class="mt-1 text-slate-400 hover:text-slate-600">
+              <button *ngIf="parent.children?.length" (click)="parent.expanded = !parent.expanded" class="self-start sm:mt-1 text-slate-400 hover:text-slate-600 p-2 touch-friendly">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path *ngIf="!parent.expanded" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/><path *ngIf="parent.expanded" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
               </button>
             </div>
-            <div *ngIf="parent.children?.length && parent.expanded" class="mt-6 ml-6 border-l border-slate-200 pl-6 space-y-4">
-              <div *ngFor="let child of parent.children" class="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
-                <div class="flex items-center gap-3">
-                  <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 font-semibold">C</span>
-                  <h4 class="font-medium text-slate-800 text-sm">{{ child.name }}</h4>
-                  <span class="px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700">Level 2</span>
-                  <span class="px-2 py-0.5 rounded-full text-xs" [ngClass]="child.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">{{ child.isActive?'Active':'Inactive' }}</span>
+            <div *ngIf="parent.children?.length && parent.expanded" class="mt-6 ml-4 sm:ml-6 border-l border-slate-200 pl-4 sm:pl-6 space-y-4">
+              <div *ngFor="let child of parent.children" class="mobile-card sm:p-4 sm:rounded-xl sm:bg-white sm:border sm:border-slate-200 sm:shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-2 sm:mb-0">
+                  <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 font-semibold">C</span>
+                    <h4 class="font-medium text-slate-800 text-sm">{{ child.name }}</h4>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700">Level 2</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs" [ngClass]="child.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">{{ child.isActive?'Active':'Inactive' }}</span>
+                  </div>
                 </div>
                 <p *ngIf="child.description" class="mt-2 text-xs text-slate-600">{{ child.description }}</p>
-                <div class="mt-2 flex flex-wrap gap-4 text-xs text-slate-500">
+                <div class="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
                   <span>Created: {{ child.createdAt | date:'short' }}</span>
-                  <button class="text-blue-600 hover:text-blue-700" (click)="viewStats(child)">Stats</button>
-                  <button *ngIf="canUpdateOrgs()" class="text-indigo-600 hover:text-indigo-700" (click)="editOrganization(child)">Edit</button>
-                  <button *ngIf="canDeleteOrgs()" class="text-red-600 hover:text-red-700" (click)="deleteOrganization(child)">Delete</button>
+                  <button class="text-blue-600 hover:text-blue-700 touch-friendly" (click)="viewStats(child)">Stats</button>
+                  <button *ngIf="canUpdateOrgs()" class="text-indigo-600 hover:text-indigo-700 touch-friendly" (click)="editOrganization(child)">Edit</button>
+                  <button *ngIf="canDeleteOrgs()" class="text-red-600 hover:text-red-700 touch-friendly" (click)="deleteOrganization(child)">Delete</button>
                 </div>
               </div>
             </div>
@@ -250,12 +262,15 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
         </div>
       </div>
 
-      <div *ngIf="selectedOrgStats()" class="mb-10 bg-white shadow rounded-2xl border border-slate-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 flex justify-between bg-gradient-to-r from-slate-50 to-slate-100"><h2 class="text-lg font-semibold text-slate-800">📊 {{ selectedOrgForStats()?.name }} Statistics</h2><button (click)="closeStats()" class="text-slate-400 hover:text-slate-600">✕</button></div>
-        <div class="p-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div *ngFor="let s of orgStatList()" class="p-4 rounded-xl border border-slate-200 bg-slate-50/60">
+      <div *ngIf="selectedOrgStats()" class="mb-6 sm:mb-10 mobile-card sm:shadow sm:rounded-2xl sm:border sm:border-slate-200 sm:overflow-hidden">
+        <div class="px-4 sm:px-6 py-4 border-b border-slate-100 flex justify-between bg-gradient-to-r from-slate-50 to-slate-100">
+          <h2 class="text-lg font-semibold text-slate-800">📊 {{ selectedOrgForStats()?.name }} Statistics</h2>
+          <button (click)="closeStats()" class="text-slate-400 hover:text-slate-600 p-1 touch-friendly">✕</button>
+        </div>
+        <div class="p-4 sm:p-6 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div *ngFor="let s of orgStatList()" class="p-3 sm:p-4 rounded-xl border border-slate-200 bg-slate-50/60">
             <p class="text-xs uppercase tracking-wide font-semibold text-slate-500">{{ s.label }}</p>
-            <p class="mt-2 text-2xl font-bold text-slate-800">{{ s.value }}</p>
+            <p class="mt-2 text-xl sm:text-2xl font-bold text-slate-800">{{ s.value }}</p>
           </div>
         </div>
       </div>
