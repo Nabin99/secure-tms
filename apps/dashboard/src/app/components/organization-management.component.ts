@@ -130,7 +130,7 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
               </div>
 
               <!-- Parent Selection (Only for Level 2) -->
-              <div *ngIf="selectedLevel() === '2'">
+              <div *ngIf="organizationForm.get('level')?.value === '2'">
                 <label for="org-parent" class="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
                   👑 <span class="ml-2">Parent Organization</span> <span class="text-red-500 ml-1">*</span>
                 </label>
@@ -144,6 +144,10 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
                     <option *ngFor="let p of parentOrganizations()" [value]="p.id">
                       {{ p.name }} (Level {{ p.level }})
                     </option>
+                    <!-- Debug: Show if no parents available -->
+                    <option *ngIf="parentOrganizations().length === 0" disabled>
+                      No parent organizations available
+                    </option>
                   </select>
                   <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                     <span class="text-slate-400">▼</span>
@@ -154,6 +158,10 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
                   <span class="mr-2">⚠️</span>
                   Parent organization is required for child organizations
                 </p>
+                <!-- Debug info -->
+                <div class="mt-2 text-xs text-slate-500">
+                  Debug: Found {{ parentOrganizations().length }} parent organization(s)
+                </div>
               </div>
             </div>
 
@@ -190,6 +198,7 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
                 type="submit"
                 [disabled]="organizationForm.invalid || isSubmitting()"
                 class="inline-flex items-center justify-center px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 touch-friendly"
+                [title]="organizationForm.invalid ? 'Please fill all required fields' : ''"
               >
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path *ngIf="editingOrganization()" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -197,6 +206,18 @@ interface OrganizationNode extends OrganizationResponse { children?: Organizatio
                 </svg>
                 {{ isSubmitting() ? (editingOrganization() ? 'Updating...' : 'Creating...') : (editingOrganization() ? 'Update Organization' : 'Create Organization') }}
               </button>
+            </div>
+            
+            <!-- Debug Form Status -->
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600" *ngIf="showCreateForm">
+              <strong>Debug Info:</strong><br>
+              Form Valid: {{ organizationForm.valid }}<br>
+              Level: {{ selectedLevel() }}<br>
+              Level Raw Value: {{ organizationForm.get('level')?.value }}<br>
+              Should Show Parent Field: {{ selectedLevel() === '2' }}<br>
+              Parent ID: {{ organizationForm.get('parentId')?.value || 'Not selected' }}<br>
+              Parent ID Valid: {{ organizationForm.get('parentId')?.valid }}<br>
+              Parent Organizations: {{ parentOrganizations().length }}
             </div>
           </div>
         </form>
@@ -293,9 +314,18 @@ export class OrganizationManagementComponent implements OnInit {
   editingOrganization = signal<OrganizationResponse | null>(null);
   message = signal<{ type: 'success' | 'error'; text: string } | null>(null);
   organizationForm: FormGroup;
-  selectedLevel = computed(() => this.organizationForm.get('level')?.value || '1');
+  selectedLevel = computed(() => {
+    const level = this.organizationForm?.get('level')?.value;
+    console.log('Current selected level:', level);
+    return level || '1';
+  });
   constructor() {
-    this.organizationForm = this.fb.group({ name: ['', [Validators.required, Validators.minLength(2)]], description: [''], level: ['1', Validators.required], parentId: [''] });
+    this.organizationForm = this.fb.group({ 
+      name: ['', [Validators.required, Validators.minLength(2)]], 
+      description: [''], 
+      level: ['1', Validators.required], 
+      parentId: [''] 
+    });
   }
   ngOnInit(): void { this.loadHierarchy(); this.loadParentOrganizations(); }
   goBack() { this.router.navigate(['/dashboard']); }
@@ -306,8 +336,31 @@ export class OrganizationManagementComponent implements OnInit {
   canDeleteOrgs() { return this.auth.hasPermission(PERMISSIONS.ORG_UPDATE); }
   orgStatList() { const s = this.selectedOrgStats(); return s ? [ { label: 'Total Users', value: s.totalUsers }, { label: 'Active Users', value: s.activeUsers }, { label: 'Total Tasks', value: s.totalTasks }, { label: 'Completed Tasks', value: s.completedTasks }, { label: 'Total Roles', value: s.totalRoles }, { label: 'Sub Orgs', value: s.subOrganizations } ] : []; }
   loadHierarchy() { this.isLoading.set(true); this.orgService.getHierarchy().subscribe({ next: data => { this.organizations.set(data.map(o => ({ ...o, expanded: true }))); this.isLoading.set(false); }, error: () => { this.message.set({ type: 'error', text: 'Failed to load organizations.' }); this.isLoading.set(false); } }); }
-  loadParentOrganizations() { this.orgService.getParentOrganizations().subscribe({ next: d => this.parentOrganizations.set(d) }); }
-  onLevelChange() { const lvl = this.organizationForm.get('level')?.value; const pid = this.organizationForm.get('parentId'); if (lvl === '2') pid?.setValidators([Validators.required]); else { pid?.clearValidators(); pid?.setValue(''); } pid?.updateValueAndValidity(); }
+  loadParentOrganizations() { 
+    this.orgService.getParentOrganizations().subscribe({ 
+      next: d => {
+        console.log('Parent organizations loaded:', d);
+        this.parentOrganizations.set(d);
+      },
+      error: (err) => {
+        console.error('Failed to load parent organizations:', err);
+        this.message.set({ type: 'error', text: 'Failed to load parent organizations.' });
+        this.parentOrganizations.set([]);
+      }
+    }); 
+  }
+  onLevelChange() { 
+    const lvl = this.organizationForm.get('level')?.value; 
+    const pid = this.organizationForm.get('parentId'); 
+    if (lvl === '2') {
+      pid?.setValidators([Validators.required]); 
+    } else { 
+      pid?.clearValidators(); 
+      pid?.setValue(''); 
+    } 
+    // Don't immediately validate - let user select parent first
+    pid?.updateValueAndValidity({ emitEvent: false }); 
+  }
   startCreateChild(parent: OrganizationResponse) { this.showCreateForm = true; this.editingOrganization.set(null); this.organizationForm.reset({ name: '', description: '', level: '2', parentId: parent.id }); }
   onSubmit() { if (this.organizationForm.invalid) return; this.isSubmitting.set(true); const raw = { ...this.organizationForm.value }; if (raw.level === '1') delete raw.parentId; delete raw.level; const editing = this.editingOrganization(); (editing ? this.orgService.updateOrganization(editing.id, raw) : this.orgService.createOrganization(raw)).subscribe({ next: () => { this.message.set({ type: 'success', text: editing ? 'Organization updated.' : 'Organization created.' }); this.refreshHierarchy(); this.cancelForm(); }, error: () => { this.message.set({ type: 'error', text: editing ? 'Update failed.' : 'Creation failed.' }); this.isSubmitting.set(false); } }); }
   editOrganization(org: OrganizationResponse) { this.editingOrganization.set(org); this.showCreateForm = true; this.organizationForm.patchValue({ name: org.name, description: org.description || '', level: String(org.level), parentId: org.parentId || '' }); }
