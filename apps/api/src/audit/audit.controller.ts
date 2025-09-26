@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuditService } from './audit.service';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -13,7 +13,7 @@ export class AuditController {
 
   @Get()
   @Permissions(PERMISSIONS.AUDIT_READ)
-  findAll(@CurrentUser() user: AuthContext['user']): Promise<AuditLog[]> {
-    return this.auditService.findAll(user);
+  findAll(@CurrentUser() user: AuthContext['user'], @Query('includeChildren') includeChildren?: string): Promise<AuditLog[]> {
+    return this.auditService.findAll(user, { includeChildren: includeChildren === 'true' });
   }
 }

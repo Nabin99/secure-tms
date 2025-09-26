@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User, Role, AuditLog } from '../entities';
 import { CreateUserDto, UpdateUserDto, ChangePasswordDto, UserResponse } from '@secure-tms/data';
@@ -44,6 +44,8 @@ export class UserService {
         organization: {
           id: true,
           name: true,
+          level: true,
+          description: true,
         }
       }
     });
@@ -106,9 +108,9 @@ export class UserService {
       throw new BadRequestException('Email already exists');
     }
 
-    // Verify the role exists and belongs to the same organization
+    // Verify the role exists (roles are now global)
     const role = await this.roleRepository.findOne({
-      where: { id: createUserDto.roleId, organizationId: createUserDto.organizationId }
+      where: { id: createUserDto.roleId }
     });
 
     if (!role) {
@@ -157,10 +159,10 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    // If updating role, verify it exists and belongs to the same organization
+    // If updating role, verify it exists (roles are now global)
     if (updateUserDto.roleId) {
       const role = await this.roleRepository.findOne({
-        where: { id: updateUserDto.roleId, organizationId: updatedByUser.organizationId }
+        where: { id: updateUserDto.roleId }
       });
 
       if (!role) {
@@ -203,11 +205,151 @@ export class UserService {
   }
 
   /**
+   * Update a user within accessible organizations
+   */
+  async updateInAccessibleOrganizations(
+    id: string, 
+    updateUserDto: UpdateUserDto, 
+    updatedByUser: AuthContext['user'],
+    accessibleOrganizationIds: string[]
+  ): Promise<UserResponse> {
+    console.log('🔍 updateInAccessibleOrganizations called:', {
+      userId: id,
+      updateUserDto,
+      updatedByUserId: updatedByUser.id,
+      accessibleOrganizationIds
+    });
+
+    const user = await this.userRepository.findOne({
+      where: { id, organizationId: In(accessibleOrganizationIds) },
+      relations: ['role'],
+    });
+
+    if (!user) {
+      console.log('❌ User not found:', { id, accessibleOrganizationIds });
+      throw new NotFoundException('User not found');
+    }
+
+    console.log('✅ User found:', {
+      userId: user.id,
+      userOrganizationId: user.organizationId,
+      currentRole: user.role
+    });
+
+    // If updating role, verify it exists (roles are now global)
+    if (updateUserDto.roleId) {
+      console.log('🔍 Validating role:', {
+        roleId: updateUserDto.roleId
+      });
+
+      // Since roles are now global, we just need to check if the role exists
+      const role = await this.roleRepository.findOne({
+        where: { id: updateUserDto.roleId }
+      });
+
+      console.log('🔍 Role lookup result:', {
+        roleFound: !!role,
+        searchCriteria: { roleId: updateUserDto.roleId },
+        role: role
+      });
+
+      if (!role) {
+        console.log('❌ Invalid role error');
+        throw new BadRequestException('Invalid role');
+      }
+    }
+
+    // Check if email is being changed and if it already exists
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
+      console.log('🔍 Validating email change:', {
+        newEmail: updateUserDto.email,
+        currentEmail: user.email
+      });
+
+      const existingUser = await this.userRepository.findOne({
+        where: { email: updateUserDto.email }
+      });
+
+      if (existingUser) {
+        console.log('❌ Email already exists error');
+        throw new BadRequestException('Email already exists');
+      }
+    }
+
+    console.log('🔍 About to update user with data:', updateUserDto);
+
+    // Update the user
+    await this.userRepository.update(id, {
+      ...updateUserDto,
+      updatedAt: new Date(),
+    });
+
+    console.log('✅ User updated successfully');
+
+    // Log the update
+    await this.auditLogRepository.save({
+      userId: updatedByUser.id,
+      action: 'USER_UPDATE',
+      resource: 'User',
+      resourceId: id,
+      organizationId: updatedByUser.organizationId,
+      metadata: {
+        updatedFields: Object.keys(updateUserDto),
+        targetUserEmail: user.email,
+      },
+      timestamp: new Date(),
+    });
+
+    return this.findOneInAccessibleOrganizations(id, accessibleOrganizationIds);
+  }
+
+  /**
    * Delete (deactivate) a user
    */
   async remove(id: string, deletedByUser: AuthContext['user']): Promise<void> {
     const user = await this.userRepository.findOne({
       where: { id, organizationId: deletedByUser.organizationId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Prevent self-deletion
+    if (user.id === deletedByUser.id) {
+      throw new ForbiddenException('Cannot delete your own account');
+    }
+
+    // Soft delete by deactivating
+    await this.userRepository.update(id, {
+      isActive: false,
+      updatedAt: new Date(),
+    });
+
+    // Log the deletion
+    await this.auditLogRepository.save({
+      userId: deletedByUser.id,
+      action: 'USER_DELETE',
+      resource: 'User',
+      resourceId: id,
+      organizationId: deletedByUser.organizationId,
+      metadata: {
+        deletedUserEmail: user.email,
+      },
+      timestamp: new Date(),
+    });
+  }
+
+  /**
+   * Delete (deactivate) a user within accessible organizations
+   */
+  async removeInAccessibleOrganizations(
+    id: string, 
+    deletedByUser: AuthContext['user'], 
+    accessibleOrganizationIds: string[]
+  ): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id, organizationId: In(accessibleOrganizationIds) },
     });
 
     if (!user) {
@@ -338,5 +480,81 @@ export class UserService {
     });
 
     return this.findOne(userId, organizationId);
+  }
+
+  /**
+   * Find all users in accessible organizations
+   */
+  async findAllInAccessibleOrganizations(organizationIds: string[]): Promise<UserResponse[]> {
+    const users = await this.userRepository.find({
+      where: { organizationId: In(organizationIds) },
+      relations: ['role', 'organization'],
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        roleId: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        organizationId: true,
+        role: {
+          id: true,
+          name: true,
+          description: true,
+        },
+        organization: {
+          id: true,
+          name: true,
+          level: true,
+          description: true,
+        }
+      }
+    });
+
+    return users.map(user => ({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      roleId: user.roleId,
+      roleName: user.role.name,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      organizationId: user.organizationId,
+      role: user.role,
+      organization: user.organization,
+    }));
+  }
+
+  /**
+   * Find a user by ID within accessible organizations
+   */
+  async findOneInAccessibleOrganizations(id: string, organizationIds: string[]): Promise<UserResponse> {
+    const user = await this.userRepository.findOne({
+      where: { id, organizationId: In(organizationIds) },
+      relations: ['role', 'organization'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      roleId: user.roleId,
+      roleName: user.role.name,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      organizationId: user.organizationId,
+      role: user.role,
+      organization: user.organization,
+    };
   }
 }

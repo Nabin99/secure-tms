@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { TaskService } from './task.service';
@@ -32,8 +33,11 @@ export class TaskController {
 
   @Get()
   @Permissions(PERMISSIONS.TASK_READ)
-  findAll(@CurrentUser() user: AuthContext['user']): Promise<TaskResponse[]> {
-    return this.taskService.findAll(user);
+  findAll(
+    @CurrentUser() user: AuthContext['user'],
+    @Query('organizationId') organizationId?: string
+  ): Promise<TaskResponse[]> {
+    return this.taskService.findAll(user, organizationId);
   }
 
   @Get(':id')

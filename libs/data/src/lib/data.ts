@@ -12,12 +12,13 @@ export interface User {
   updatedAt: Date;
 }
 
-// Organization entity (2-level hierarchy)
+// Organizations
 export interface Organization {
   id: string;
   name: string;
-  parentId?: string; // For 2-level hierarchy
   description?: string;
+  level: number;
+  parentId?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -29,7 +30,6 @@ export interface Role {
   name: 'Owner' | 'Admin' | 'Viewer';
   description: string;
   permissions: string[];
-  organizationId: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -76,6 +76,7 @@ export interface CreateTaskDto {
   priority: 'Low' | 'Medium' | 'High';
   dueDate?: Date;
   assignedUserId?: string;
+  organizationId?: string;
 }
 
 export interface UpdateTaskDto {
@@ -107,6 +108,7 @@ export interface UpdateUserDto {
   firstName?: string;
   lastName?: string;
   roleId?: string;
+  organizationId?: string;
   isActive?: boolean;
 }
 
@@ -129,6 +131,8 @@ export interface UserResponse {
   organization?: {
     id: string;
     name: string;
+    level: number;
+    description?: string;
   };
   role?: {
     id: string;
@@ -153,6 +157,11 @@ export interface TaskResponse extends Omit<Task, 'createdBy'> {
     id: string;
     firstName: string;
     lastName: string;
+  };
+  organization?: {
+    id: string;
+    name: string;
+    level: number;
   };
 }
 

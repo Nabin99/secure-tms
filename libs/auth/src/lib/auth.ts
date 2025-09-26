@@ -5,7 +5,7 @@ export const PERMISSIONS = {
   TASK_READ: 'task:read',
   TASK_UPDATE: 'task:update',
   TASK_DELETE: 'task:delete',
-  TASK_READ_ALL: 'task:read:all', // Can read all tasks in org
+  TASK_READ_ALL: 'task:read:all', // Can read all tasks in org (or parent+children if owner at parent)
   TASK_ASSIGN: 'task:assign', // Can assign tasks to other users
   
   // User permissions
@@ -22,7 +22,10 @@ export const PERMISSIONS = {
   AUDIT_READ: 'audit:read',
 } as const;
 
-// Role permission mapping
+// Role permission mapping aligned to new requirements:
+// Owner: Full CRUD + audit, can operate across parent + children (cross-org logic enforced in services)
+// Admin: CRUD only within own org (no org CRUD operations, only read)
+// Viewer: Read-only tasks in own org
 export const ROLE_PERMISSIONS = {
   Owner: [
     PERMISSIONS.TASK_CREATE,
@@ -49,16 +52,12 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.USER_CREATE,
     PERMISSIONS.USER_READ,
     PERMISSIONS.USER_UPDATE,
+    PERMISSIONS.USER_DELETE,
     PERMISSIONS.ORG_READ,
-    PERMISSIONS.AUDIT_READ,
   ],
   Viewer: [
-    PERMISSIONS.TASK_CREATE,
     PERMISSIONS.TASK_READ,
-    PERMISSIONS.TASK_UPDATE,
-    PERMISSIONS.TASK_DELETE,
-    PERMISSIONS.USER_READ,
-    PERMISSIONS.ORG_READ,
+    PERMISSIONS.TASK_READ_ALL,
   ],
 } as const;
 
@@ -83,6 +82,7 @@ export interface AuthContext {
     roleId: string;
     roleName: 'Owner' | 'Admin' | 'Viewer';
     permissions: string[];
+    organizationName?: string;
   };
 }
 

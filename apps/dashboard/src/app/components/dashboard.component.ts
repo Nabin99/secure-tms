@@ -5,12 +5,15 @@ import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { AuthService } from '../services/auth.service';
 import { TaskService } from '../services/task.service';
-import { TaskResponse } from '@secure-tms/data';
+import { OrganizationService } from '../services/organization.service';
+import { TaskResponse, UpdateTaskDto, OrganizationResponse } from '@secure-tms/data';
 import { PERMISSIONS } from '@secure-tms/auth';
 import { TaskFormComponent } from './task-form.component';
 import { TaskItemComponent } from './task-item.component';
 import { ConfirmationModalComponent } from './confirmation-modal.component';
 import { AuditLogComponent } from './audit-log.component';
+// Define a local TaskStatus union to avoid any usage
+ type TaskStatus = 'Todo' | 'InProgress' | 'Done';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,10 +25,16 @@ import { AuditLogComponent } from './audit-log.component';
       <nav class="bg-white shadow">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between h-16">
-            <div class="flex items-center">
-              <h1 class="text-xl font-semibold text-gray-900">
-                Task Management System
-              </h1>
+            <div class="flex items-center space-x-4">
+              <h1 class="text-xl font-semibold text-gray-900">Task Management System</h1>
+              @if (currentUser$ | async; as cu) {
+                <div class="hidden md:flex items-center text-xs text-gray-600 space-x-2 pl-4 border-l border-gray-200">
+                  <span class="font-medium text-gray-700">Org:</span>
+                  <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold" [title]="cu.organizationId">{{ cu.organizationName || 'Unknown Org' }}</span>
+                  <span class="font-medium text-gray-700">Role:</span>
+                  <span class="px-2 py-0.5 rounded" [ngClass]="roleBadgeClass(cu.roleName)">{{ cu.roleName }}</span>
+                </div>
+              }
             </div>
             <div class="flex items-center space-x-4">
               @if (currentUser$ | async; as currentUser) {
@@ -39,6 +48,17 @@ import { AuditLogComponent } from './audit-log.component';
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                       </svg>
                       Users
+                    </button>
+                  }
+                  @if (canManageOrganizations()) {
+                    <button
+                      (click)="navigateToOrganizations()"
+                      class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h1M9 7h1m1 0h1M9 11h1m1 0h1m1 4h1"></path>
+                      </svg>
+                      Organizations
                     </button>
                   }
                   @if (canViewAuditLog()) {
@@ -71,6 +91,16 @@ import { AuditLogComponent } from './audit-log.component';
           </div>
         </div>
       </nav>
+
+      <!-- Demo Quick Switch (only show on dev & if logged out) -->
+      @if ((currentUser$ | async) === null) {
+        <div class="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 text-white py-3 text-center text-sm">
+          <span class="font-medium">Quick Demo Login:</span>
+          <button (click)="quickLogin('owner@test.com')" class="ml-2 underline hover:text-yellow-200">Owner</button>
+          <button (click)="quickLogin('eng.admin@test.com')" class="ml-2 underline hover:text-yellow-200">Child Admin</button>
+          <button (click)="quickLogin('viewer@test.com')" class="ml-2 underline hover:text-yellow-200">Viewer</button>
+        </div>
+      }
 
       <!-- Main content -->
       <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -161,7 +191,7 @@ import { AuditLogComponent } from './audit-log.component';
 
           <!-- Filters and Search -->
           <div class="px-6 py-6 bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50 border-t border-slate-200/60">
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
               <!-- Search -->
               <div class="group">
                 <label for="search" class="block text-sm font-semibold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">
@@ -176,6 +206,26 @@ import { AuditLogComponent } from './audit-log.component';
                   class="block w-full px-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-slate-300"
                 />
               </div>
+
+              <!-- Organization Filter (Only for Owners) -->
+              @if (showOrganizationFilter()) {
+                <div class="group">
+                  <label for="organization" class="block text-sm font-semibold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">
+                    🏢 Organization
+                  </label>
+                  <select
+                    id="organization"
+                    [(ngModel)]="selectedOrganization"
+                    (change)="applyFilters()"
+                    class="block w-full px-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-slate-300 cursor-pointer"
+                  >
+                    <option value="">All Organizations</option>
+                    @for (org of accessibleOrganizations; track org.id) {
+                      <option [value]="org.id">{{ org.name }} {{ org.level === 1 ? '(Parent)' : '(Child)' }}</option>
+                    }
+                  </select>
+                </div>
+              }
 
               <!-- Category Filter -->
               <div class="group">
@@ -298,7 +348,8 @@ import { AuditLogComponent } from './audit-log.component';
                           [canEdit]="canEditTask(task)"
                           [canDelete]="canDeleteTask(task)"
                           (taskUpdated)="onTaskUpdated($event)"
-                          (taskDeleted)="onTaskDeleted($event)">
+                          (taskDeleted)="onTaskDeleted($event)"
+                          [orgBadge]="orgBadgeFor(task)">
                         </app-task-item>
                       </div>
                     }
@@ -330,7 +381,8 @@ import { AuditLogComponent } from './audit-log.component';
                           [canEdit]="canEditTask(task)"
                           [canDelete]="canDeleteTask(task)"
                           (taskUpdated)="onTaskUpdated($event)"
-                          (taskDeleted)="onTaskDeleted($event)">
+                          (taskDeleted)="onTaskDeleted($event)"
+                          [orgBadge]="orgBadgeFor(task)">
                         </app-task-item>
                       </div>
                     }
@@ -362,7 +414,8 @@ import { AuditLogComponent } from './audit-log.component';
                           [canEdit]="canEditTask(task)"
                           [canDelete]="canDeleteTask(task)"
                           (taskUpdated)="onTaskUpdated($event)"
-                          (taskDeleted)="onTaskDeleted($event)">
+                          (taskDeleted)="onTaskDeleted($event)"
+                          [orgBadge]="orgBadgeFor(task)">
                         </app-task-item>
                       </div>
                     }
@@ -398,6 +451,7 @@ import { AuditLogComponent } from './audit-log.component';
 export class DashboardComponent implements OnInit {
   private authService = inject(AuthService);
   private taskService = inject(TaskService);
+  private organizationService = inject(OrganizationService);
   private router = inject(Router);
 
   currentUser$ = this.authService.currentUser$;
@@ -405,6 +459,7 @@ export class DashboardComponent implements OnInit {
   showLogoutModal = false;
   tasks: TaskResponse[] = [];
   filteredTasks: TaskResponse[] = [];
+  accessibleOrganizations: OrganizationResponse[] = [];
   isLoading = true;
   showCreateForm = false;
 
@@ -412,13 +467,19 @@ export class DashboardComponent implements OnInit {
   searchTerm = '';
   selectedCategory = '';
   selectedPriority = '';
+  selectedOrganization = '';
   sortBy = 'createdAt';
+  quickLoginInProgress = false;
 
   ngOnInit(): void {
     this.loadTasks();
+    this.loadAccessibleOrganizations();
     // Subscribe to user changes
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+      if (user) {
+        this.loadAccessibleOrganizations();
+      }
     });
   }
 
@@ -437,6 +498,19 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  loadAccessibleOrganizations(): void {
+    if (this.currentUser?.roleName === 'Owner') {
+      this.organizationService.getAccessibleOrganizations().subscribe({
+        next: (orgs) => {
+          this.accessibleOrganizations = orgs;
+        },
+        error: (error) => {
+          console.error('Error loading organizations:', error);
+        }
+      });
+    }
+  }
+
   applyFilters(): void {
     let filtered = [...this.tasks];
 
@@ -447,6 +521,11 @@ export class DashboardComponent implements OnInit {
         task.title.toLowerCase().includes(searchLower) ||
         (task.description && task.description.toLowerCase().includes(searchLower))
       );
+    }
+
+    // Apply organization filter
+    if (this.selectedOrganization) {
+      filtered = filtered.filter(task => task.organizationId === this.selectedOrganization);
     }
 
     // Apply category filter
@@ -494,37 +573,42 @@ export class DashboardComponent implements OnInit {
 
   drop(event: CdkDragDrop<TaskResponse[]>): void {
     console.log('Drop event:', event);
-    
+
     if (event.previousContainer === event.container) {
-      // Reordering within the same column
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-    } else {
-      // Moving between columns - update task status
-      const task = event.previousContainer.data[event.previousIndex];
-      const newStatus = this.getStatusFromContainerId(event.container.id);
-      
-      console.log('Moving task:', task.title, 'from', task.status, 'to', newStatus);
-      
-      if (newStatus && task.status !== newStatus) {
-        // Update task status
-        this.taskService.updateTask(task.id, { status: newStatus as 'Todo' | 'InProgress' | 'Done' }).subscribe({
-          next: (updatedTask) => {
-            console.log('Task status updated successfully:', updatedTask);
-            // Update local task data
-            const taskIndex = this.tasks.findIndex(t => t.id === task.id);
-            if (taskIndex !== -1) {
-              this.tasks[taskIndex] = updatedTask;
-              this.applyFilters();
-            }
-          },
-          error: (error) => {
-            console.error('Error updating task status:', error);
-            // Revert the drag operation by reloading tasks
-            this.loadTasks();
-          }
-        });
-      }
+      return;
     }
+
+    const task = event.previousContainer.data[event.previousIndex];
+    const newStatus = this.getStatusFromContainerId(event.container.id) as TaskStatus | null;
+
+    if (!newStatus) {
+      return;
+    }
+
+    const oldStatus: TaskStatus = task.status as TaskStatus;
+    task.status = newStatus;
+
+    event.previousContainer.data.splice(event.previousIndex, 1);
+    event.container.data.splice(event.currentIndex, 0, task);
+
+    if (!this.canEditTask(task)) {
+      task.status = oldStatus;
+      this.applyFilters();
+      return;
+    }
+
+    const payload: Partial<UpdateTaskDto> = { status: newStatus };
+    this.taskService.updateTask(task.id, payload as UpdateTaskDto).subscribe({
+      next: (updated) => {
+        this.onTaskUpdated(updated);
+      },
+      error: (err) => {
+        console.error('Failed to update task status via drag-drop', err);
+        task.status = oldStatus; // revert
+        this.applyFilters();
+      }
+    });
   }
 
   private getStatusFromContainerId(containerId: string): string | null {
@@ -588,6 +672,14 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/users']);
   }
 
+  navigateToOrganizations(): void {
+    this.router.navigate(['/organizations']);
+  }
+
+  canManageOrganizations(): boolean {
+    return this.authService.hasPermission(PERMISSIONS.ORG_READ);
+  }
+
   onTaskCreated(task: TaskResponse): void {
     this.tasks.unshift(task);
     this.applyFilters(); // Update the filtered view to show the new task
@@ -618,5 +710,58 @@ export class DashboardComponent implements OnInit {
 
   cancelLogout(): void {
     this.showLogoutModal = false;
+  }
+
+  roleBadgeClass(role: string | undefined): string {
+    if (!role) return 'bg-gray-100 text-gray-600';
+    switch (role) {
+      case 'Owner':
+        return 'bg-purple-100 text-purple-700 font-semibold';
+      case 'Admin':
+        return 'bg-blue-100 text-blue-700 font-semibold';
+      case 'Viewer':
+        return 'bg-gray-100 text-gray-700';
+      default:
+        return 'bg-gray-100 text-gray-600';
+    }
+  }
+
+  orgBadgeFor(task: TaskResponse): string | undefined {
+    if (!this.currentUser) return undefined;
+    
+    // Only show badge for Owner (who can see parent + child) or when task org differs (future multi-child support)
+    if (this.currentUser.roleName === 'Owner') {
+      if (task.organization) {
+        // Use organization name from the task response
+        return task.organizationId === this.currentUser.organizationId 
+          ? `${task.organization.name} (Parent)` 
+          : `${task.organization.name} (Child)`;
+      } else {
+        // Fallback to generic labels if organization data not available
+        return task.organizationId === this.currentUser.organizationId ? 'Parent Org' : 'Child Org';
+      }
+    }
+    
+    // For Admin/Viewer (single org scope) we can omit badge to reduce noise
+    return undefined;
+  }
+
+  showOrganizationFilter(): boolean {
+    return this.currentUser?.roleName === 'Owner' && this.accessibleOrganizations.length > 1;
+  }
+
+  quickLogin(email: string): void {
+    if (this.quickLoginInProgress) return;
+    this.quickLoginInProgress = true;
+    this.authService.login({ email, password: 'password123' }).subscribe({
+      next: () => {
+        this.quickLoginInProgress = false;
+        this.loadTasks();
+      },
+      error: (err) => {
+        console.error('Quick login failed', err);
+        this.quickLoginInProgress = false;
+      }
+    });
   }
 }

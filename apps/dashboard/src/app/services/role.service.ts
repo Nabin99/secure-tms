@@ -7,7 +7,6 @@ export interface RoleResponse {
   name: string;
   description: string;
   permissions: string[];
-  organizationId: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,10 +18,17 @@ export class RoleService {
   private http = inject(HttpClient);
 
   /**
-   * Get all roles in the current organization
+   * Get all global roles (same as getAccessibleRoles - kept for backward compatibility)
    */
   getRoles(): Observable<RoleResponse[]> {
     return this.http.get<RoleResponse[]>('/api/roles');
+  }
+
+  /**
+   * Get all global roles accessible to any user
+   */
+  getAccessibleRoles(): Observable<RoleResponse[]> {
+    return this.http.get<RoleResponse[]>('/api/roles/accessible');
   }
 
   /**

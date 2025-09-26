@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { UserService } from '../services/user.service';
 import { RoleService, RoleResponse } from '../services/role.service';
+import { OrganizationService } from '../services/organization.service';
+import { OrganizationResponse } from '@secure-tms/data';
 import { AuthService } from '../services/auth.service';
 import { UserResponse, CreateUserDto, UpdateUserDto } from '@secure-tms/data';
 import { PERMISSIONS } from '@secure-tms/auth';
@@ -212,7 +214,9 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                     >
                       <option value="">Select a role...</option>
                       @for (role of availableRoles; track role.id) {
-                        <option [value]="role.id">{{ role.name }} - {{ role.description }}</option>
+                        <option [value]="role.id">
+                          {{ role.name }} - {{ role.description }}{{ getRoleOrgSuffix() }}
+                        </option>
                       }
                     </select>
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -227,6 +231,48 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                       </svg>
                       Please select a role
+                    </p>
+                  }
+                </div>
+
+                <!-- Organization -->
+                <div>
+                  <label for="organizationId" class="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
+                    🏢 <span class="ml-2">Organization</span> <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">
+                    <select
+                      id="organizationId"
+                      formControlName="organizationId"
+                      class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm appearance-none"
+                      [class.border-red-300]="createUserForm.get('organizationId')?.invalid && createUserForm.get('organizationId')?.touched"
+                      [class.focus:ring-red-500]="createUserForm.get('organizationId')?.invalid && createUserForm.get('organizationId')?.touched"
+                    >
+                      <option value="">Select an organization...</option>
+                      @for (org of availableOrganizations; track org.id) {
+                        <option [value]="org.id">
+                          {{ org.name }} 
+                          @if (org.level === 2 && org.parent) {
+                            <span class="text-slate-500">({{ org.parent.name }})</span>
+                          }
+                          @if (org.level === 1) {
+                            <span class="text-blue-600">(Parent Org)</span>
+                          }
+                        </option>
+                      }
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg class="w-5 h-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                      </svg>
+                    </div>
+                  </div>
+                  @if (createUserForm.get('organizationId')?.invalid && createUserForm.get('organizationId')?.touched) {
+                    <p class="mt-2 text-sm text-red-600 flex items-center">
+                      <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                      </svg>
+                      Please select an organization
                     </p>
                   }
                 </div>
@@ -290,9 +336,9 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
 
         <!-- Filters and Search -->
         <div class="bg-white px-6 py-4 border-b border-slate-200">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Search -->
-            <div class="md:col-span-2">
+            <div class="lg:col-span-2">
               <label for="searchInput" class="block text-sm font-medium text-slate-700 mb-2">
                 🔍 Search Users
               </label>
@@ -301,7 +347,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                 type="text"
                 [(ngModel)]="searchTerm"
                 (ngModelChange)="onSearchChange()"
-                placeholder="Search by name, email, or role..."
+                placeholder="Search by name, email, role, or organization..."
                 class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -324,6 +370,27 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
               </select>
             </div>
 
+            <!-- Organization Filter -->
+            <div>
+              <label for="organizationFilter" class="block text-sm font-medium text-slate-700 mb-2">
+                🏢 Filter by Organization
+              </label>
+              <select
+                id="organizationFilter"
+                [(ngModel)]="selectedOrganizationFilter"
+                (ngModelChange)="onOrganizationFilterChange()"
+                class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Organizations</option>
+                @for (org of availableOrganizations; track org.id) {
+                  <option [value]="org.id">{{ org.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <!-- Second row for status filter -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
             <!-- Status Filter -->
             <div>
               <label for="statusFilter" class="block text-sm font-medium text-slate-700 mb-2">
@@ -488,6 +555,12 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                         </span>
                         <span class="flex items-center">
                           🎭 {{ user.roleName }}
+                          @if (!user.roleName) {
+                            <span class="text-red-500 ml-2">[MISSING roleName]</span>
+                          }
+                        </span>
+                        <span class="flex items-center">
+                          🏢 {{ user.organization?.name || 'No Organization' }}
                         </span>
                         @if (user.createdAt) {
                           <span class="flex items-center">
@@ -650,7 +723,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                       class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm appearance-none"
                     >
                       @for (role of availableRoles; track role.id) {
-                        <option [value]="role.id">{{ role.name }} - {{ role.description }}</option>
+                        <option [value]="role.id">{{ role.name }} - {{ role.description }}{{ getRoleOrgSuffix() }}</option>
                       }
                     </select>
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -659,6 +732,46 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
                       </svg>
                     </div>
                   </div>
+                </div>
+
+                <!-- Organization -->
+                <div>
+                  <label for="editOrganizationId" class="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
+                    🏢 <span class="ml-2">Organization</span>
+                  </label>
+                  <div class="relative">
+                    <select
+                      id="editOrganizationId"
+                      formControlName="organizationId"
+                      class="block w-full px-4 py-3 text-slate-900 border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-slate-300 transition-all duration-200 sm:text-sm appearance-none"
+                    >
+                      <option value="">Select an organization...</option>
+                      @for (org of availableOrganizations; track org.id) {
+                        <option [value]="org.id">
+                          {{ org.name }}
+                          @if (org.level === 2 && org.parent) {
+                            <span class="text-slate-500">({{ org.parent.name }})</span>
+                          }
+                          @if (org.level === 1) {
+                            <span class="text-blue-600">(Parent Org)</span>
+                          }
+                        </option>
+                      }
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg class="w-5 h-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                      </svg>
+                    </div>
+                  </div>
+                  @if (editUserForm.get('organizationId')?.invalid && editUserForm.get('organizationId')?.touched) {
+                    <div class="mt-2 flex items-center text-sm text-red-600">
+                      <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                      </svg>
+                      Please select an organization
+                    </div>
+                  }
                 </div>
 
                 <!-- Active Status -->
@@ -743,6 +856,7 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
 export class UserManagementComponent implements OnInit {
   private userService = inject(UserService);
   private roleService = inject(RoleService);
+  private organizationService = inject(OrganizationService);
   private authService = inject(AuthService);
   private formBuilder = inject(FormBuilder);
   private router = inject(Router);
@@ -750,6 +864,7 @@ export class UserManagementComponent implements OnInit {
   users: UserResponse[] = [];
   filteredUsers: UserResponse[] = [];
   availableRoles: RoleResponse[] = [];
+  availableOrganizations: OrganizationResponse[] = [];
   isLoading = true;
   showCreateForm = false;
   showEditModal = false;
@@ -760,6 +875,7 @@ export class UserManagementComponent implements OnInit {
   // Filtering and sorting properties
   searchTerm = '';
   selectedRoleFilter = '';
+  selectedOrganizationFilter = '';
   statusFilter = 'all'; // 'all', 'active', 'inactive'
   sortField: 'firstName' | 'lastName' | 'email' | 'role' | 'createdAt' = 'firstName';
   sortDirection: 'asc' | 'desc' = 'asc';
@@ -777,7 +893,8 @@ export class UserManagementComponent implements OnInit {
     lastName: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]],
-    roleId: ['', Validators.required]
+    roleId: ['', Validators.required],
+    organizationId: ['', Validators.required]
   });
 
   editUserForm: FormGroup = this.formBuilder.group({
@@ -785,12 +902,14 @@ export class UserManagementComponent implements OnInit {
     lastName: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     roleId: ['', Validators.required],
+    organizationId: ['', Validators.required],
     isActive: [true]
   });
 
   ngOnInit(): void {
     this.loadUsers();
     this.loadAvailableRoles();
+    this.loadAvailableOrganizations();
   }
 
   goBack(): void {
@@ -801,6 +920,15 @@ export class UserManagementComponent implements OnInit {
     this.isLoading = true;
     this.userService.getUsers().subscribe({
       next: (users) => {
+        console.log('🔍 UserManagementComponent received users data:', users);
+        
+        // Debug: Check Level 2 users specifically
+        const level2Users = users.filter(u => u.organization?.level === 2);
+        console.log('🔍 Level 2 users with role data:');
+        level2Users.forEach(user => {
+          console.log(`  - ${user.firstName} ${user.lastName}: roleName="${user.roleName}", role=`, user.role);
+        });
+        
         this.users = users;
         this.applyFiltersAndSorting();
         this.isLoading = false;
@@ -813,14 +941,27 @@ export class UserManagementComponent implements OnInit {
   }
 
   loadAvailableRoles(): void {
+    // Since roles are now global, both endpoints return the same data
     this.roleService.getRoles().subscribe({
       next: (roles) => {
+        console.log('🔍 Global roles loaded:', roles);
         this.availableRoles = roles;
       },
       error: (error) => {
         console.error('Error loading roles:', error);
-        // Fallback to basic roles if API fails
         this.availableRoles = [];
+      }
+    });
+  }
+
+  loadAvailableOrganizations(): void {
+    this.organizationService.getAccessibleOrganizations().subscribe({
+      next: (organizations) => {
+        this.availableOrganizations = organizations;
+      },
+      error: (error) => {
+        console.error('Error loading organizations:', error);
+        this.availableOrganizations = [];
       }
     });
   }
@@ -828,7 +969,7 @@ export class UserManagementComponent implements OnInit {
   createUser(): void {
     if (this.createUserForm.valid) {
       this.isCreating = true;
-      const userData = this.createUserForm.value as Omit<CreateUserDto, 'organizationId'>;
+      const userData = this.createUserForm.value as CreateUserDto;
       
       this.userService.createUser(userData).subscribe({
         next: (newUser) => {
@@ -847,14 +988,21 @@ export class UserManagementComponent implements OnInit {
   }
 
   editUser(user: UserResponse): void {
+    console.log('🔍 Editing user:', user);
+    console.log('🔍 User roleId:', user.roleId, 'roleName:', user.roleName);
+    console.log('🔍 Available roles:', this.availableRoles);
+    
     this.selectedUser = user;
     this.editUserForm.patchValue({
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
       roleId: user.roleId,
+      organizationId: user.organizationId,
       isActive: user.isActive
     });
+    
+    console.log('🔍 Edit form values after patch:', this.editUserForm.value);
     this.showEditModal = true;
   }
 
@@ -863,8 +1011,18 @@ export class UserManagementComponent implements OnInit {
       this.isUpdating = true;
       const updateData = this.editUserForm.value as UpdateUserDto;
       
+      console.log('🚀 SENDING UPDATE REQUEST:', {
+        selectedUserId: this.selectedUser?.id,
+        updateData: updateData,
+        formValues: this.editUserForm.value,
+        formValid: this.editUserForm.valid,
+        selectedUserRole: this.selectedUser?.role,
+        selectedUserOrganization: this.selectedUser?.organization
+      });
+      
       this.userService.updateUser(this.selectedUser.id, updateData).subscribe({
         next: (updatedUser) => {
+          console.log('✅ UPDATE SUCCESS:', updatedUser);
           const index = this.users.findIndex(u => u.id === updatedUser.id);
           if (index !== -1) {
             this.users[index] = updatedUser;
@@ -874,9 +1032,22 @@ export class UserManagementComponent implements OnInit {
           this.isUpdating = false;
         },
         error: (error) => {
-          console.error('Error updating user:', error);
+          console.error('❌ UPDATE ERROR:', error);
+          console.error('Error details:', {
+            status: error.status,
+            statusText: error.statusText,
+            message: error.message,
+            error: error.error
+          });
           this.isUpdating = false;
         }
+      });
+    } else {
+      console.error('Form is invalid or no user selected:', {
+        formValid: this.editUserForm.valid,
+        selectedUser: this.selectedUser,
+        formErrors: this.editUserForm.errors,
+        formValue: this.editUserForm.value
       });
     }
   }
@@ -989,13 +1160,19 @@ export class UserManagementComponent implements OnInit {
         user.firstName.toLowerCase().includes(searchLower) ||
         user.lastName.toLowerCase().includes(searchLower) ||
         user.email.toLowerCase().includes(searchLower) ||
-        (user.role?.name.toLowerCase().includes(searchLower))
+        (user.roleName?.toLowerCase().includes(searchLower)) ||
+        (user.organization?.name?.toLowerCase().includes(searchLower))
       );
     }
 
     // Apply role filter
     if (this.selectedRoleFilter) {
       filtered = filtered.filter(user => user.roleId === this.selectedRoleFilter);
+    }
+
+    // Apply organization filter
+    if (this.selectedOrganizationFilter) {
+      filtered = filtered.filter(user => user.organizationId === this.selectedOrganizationFilter);
     }
 
     // Apply status filter
@@ -1023,8 +1200,8 @@ export class UserManagementComponent implements OnInit {
           bValue = b.email.toLowerCase();
           break;
         case 'role':
-          aValue = (a.role?.name || '').toLowerCase();
-          bValue = (b.role?.name || '').toLowerCase();
+          aValue = (a.roleName || '').toLowerCase();
+          bValue = (b.roleName || '').toLowerCase();
           break;
         case 'createdAt':
           aValue = new Date(a.createdAt);
@@ -1055,6 +1232,10 @@ export class UserManagementComponent implements OnInit {
     this.applyFiltersAndSorting();
   }
 
+  onOrganizationFilterChange(): void {
+    this.applyFiltersAndSorting();
+  }
+
   onStatusFilterChange(): void {
     this.applyFiltersAndSorting();
   }
@@ -1072,6 +1253,7 @@ export class UserManagementComponent implements OnInit {
   clearFilters(): void {
     this.searchTerm = '';
     this.selectedRoleFilter = '';
+    this.selectedOrganizationFilter = '';
     this.statusFilter = 'all';
     this.sortField = 'firstName';
     this.sortDirection = 'asc';
@@ -1092,5 +1274,13 @@ export class UserManagementComponent implements OnInit {
 
   canDeactivateUsers(): boolean {
     return this.authService.hasPermission(PERMISSIONS.USER_UPDATE);
+  }
+
+  /**
+   * Get organization suffix for role display (simplified for global roles)
+   */
+  getRoleOrgSuffix(): string {
+    // Global roles don't need organization suffixes
+    return '';
   }
 }

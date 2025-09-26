@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
-import { Organization } from './organization.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('roles')
@@ -7,7 +6,7 @@ export class Role {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ unique: true })
   name: 'Owner' | 'Admin' | 'Viewer';
 
   @Column()
@@ -16,9 +15,6 @@ export class Role {
   @Column('simple-array')
   permissions: string[];
 
-  @Column()
-  organizationId: string;
-
   @CreateDateColumn()
   createdAt: Date;
 
@@ -26,10 +22,6 @@ export class Role {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => Organization)
-  @JoinColumn({ name: 'organizationId' })
-  organization: Organization;
-
   @OneToMany(() => User, user => user.role)
   users: User[];
 }
