@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../services/task.service';
 import { UserService, UserOption } from '../services/user.service';
+import { OrganizationService } from '../services/organization.service';
 import { AuthService } from '../services/auth.service';
-import { CreateTaskDto, UpdateTaskDto, TaskResponse } from '@secure-tms/data';
+import { CreateTaskDto, UpdateTaskDto, TaskResponse, OrganizationResponse } from '@secure-tms/data';
 import { PERMISSIONS } from '@secure-tms/auth';
 
 @Component({
@@ -188,6 +189,35 @@ import { PERMISSIONS } from '@secure-tms/auth';
               <p class="mt-1 text-xs text-gray-500">Leave empty to assign to yourself</p>
             </div>
           }
+
+          <!-- Organization Selection (Only for Owners creating tasks) -->
+          @if (canSelectOrganization && !isEditing) {
+            <div class="{{ canAssignTasks ? '' : 'sm:col-span-1' }}">
+              <label for="organizationId" class="block text-sm font-semibold text-gray-900 mb-2">
+                Target Organization
+              </label>
+              <div class="relative">
+                <select
+                  id="organizationId"
+                  formControlName="organizationId"
+                  class="block w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-all duration-200 sm:text-sm appearance-none"
+                >
+                  <option value="">🏢 Select organization (optional)</option>
+                  @for (org of organizations; track org.id) {
+                    <option [value]="org.id">
+                      {{ org.name }} {{ org.level === 1 ? '(Parent)' : '(Child)' }}
+                    </option>
+                  }
+                </select>
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+              </div>
+              <p class="mt-1 text-xs text-gray-500">Leave empty to use your organization</p>
+            </div>
+          }
         </div>
 
         <!-- Description Field -->
@@ -273,6 +303,7 @@ export class TaskFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private taskService = inject(TaskService);
   private userService = inject(UserService);
+  private organizationService = inject(OrganizationService);
   private authService = inject(AuthService);
 
   @Input() task?: TaskResponse;
@@ -285,7 +316,10 @@ export class TaskFormComponent implements OnInit {
   errorMessage = '';
   isEditing = false;
   users: UserOption[] = [];
+  organizations: OrganizationResponse[] = [];
   canAssignTasks = false;
+  canSelectOrganization = false;
+  currentUser: { roleName: string; organizationId: string } | null = null;
 
   constructor() {
     this.taskForm = this.fb.group({
@@ -295,13 +329,25 @@ export class TaskFormComponent implements OnInit {
       priority: ['', Validators.required],
       status: ['Todo'],
       dueDate: [''],
-      assignedUserId: ['']
+      assignedUserId: [''],
+      organizationId: ['']
     });
   }
 
   ngOnInit(): void {
+    // Get current user
+    this.currentUser = this.authService.currentUserValue;
+    
     // Check if user can assign tasks to others
     this.canAssignTasks = this.authService.hasPermission(PERMISSIONS.TASK_ASSIGN);
+    
+    // Check if user can select organization (only Owners)
+    this.canSelectOrganization = this.currentUser?.roleName === 'Owner';
+    
+    // Load organizations for selection dropdown if user has permission
+    if (this.canSelectOrganization) {
+      this.loadAccessibleOrganizations();
+    }
     
     // Load users for assignment dropdown if user has permission
     if (this.canAssignTasks) {
@@ -312,6 +358,17 @@ export class TaskFormComponent implements OnInit {
       this.isEditing = true;
       this.populateForm();
     }
+  }
+
+  private loadAccessibleOrganizations(): void {
+    this.organizationService.getAccessibleOrganizations().subscribe({
+      next: (orgs) => {
+        this.organizations = orgs;
+      },
+      error: (error) => {
+        console.error('Error loading organizations:', error);
+      }
+    });
   }
 
   private loadUsers(): void {
@@ -334,7 +391,8 @@ export class TaskFormComponent implements OnInit {
         priority: this.task.priority,
         status: this.task.status,
         dueDate: this.task.dueDate ? new Date(this.task.dueDate).toISOString().split('T')[0] : '',
-        assignedUserId: this.task.assignedUserId || ''
+        assignedUserId: this.task.assignedUserId || '',
+        organizationId: this.task.organizationId || ''
       });
     }
   }
@@ -348,7 +406,8 @@ export class TaskFormComponent implements OnInit {
       const taskData = {
         ...formValue,
         dueDate: formValue.dueDate ? new Date(formValue.dueDate) : undefined,
-        assignedUserId: formValue.assignedUserId || undefined // Only include if not empty
+        assignedUserId: formValue.assignedUserId || undefined, // Only include if not empty
+        organizationId: formValue.organizationId || undefined // Only include if not empty
       };
 
       if (this.isEditing && this.task) {

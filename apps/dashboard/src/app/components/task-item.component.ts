@@ -14,10 +14,18 @@ import { ConfirmationModalComponent } from './confirmation-modal.component';
       @if (!isEditing) {
         <div class="space-y-3">
           <!-- Task Header -->
-          <div class="flex items-center justify-between">
-            <h4 class="text-sm font-semibold text-gray-900 line-clamp-2">
-              {{ task.title }}
-            </h4>
+          <div class="flex items-start justify-between">
+            <div class="flex-1 min-w-0 pr-2">
+              <div class="flex items-center space-x-2 mb-1">
+                @if (orgBadge) {
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide"
+                        [ngClass]="orgBadge.includes('Parent') ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'">
+                    {{ orgBadge }}
+                  </span>
+                }
+                <h4 class="text-sm font-semibold text-gray-900 line-clamp-2 flex-1">{{ task.title }}</h4>
+              </div>
+            </div>
             <span 
               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium flex-shrink-0"
               [ngClass]="{
@@ -148,6 +156,7 @@ export class TaskItemComponent {
   @Input() task!: TaskResponse;
   @Input() canEdit = false;
   @Input() canDelete = false;
+  @Input() orgBadge?: string;
   @Output() taskUpdated = new EventEmitter<TaskResponse>();
   @Output() taskDeleted = new EventEmitter<string>();
 

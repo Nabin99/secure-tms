@@ -27,6 +27,11 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard]
   },
   {
+    path: 'organizations',
+    loadComponent: () => import('./components/organization-management.component').then(m => m.OrganizationManagementComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: '**',
     redirectTo: '/dashboard'
   }

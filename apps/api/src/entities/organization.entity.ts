@@ -1,6 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from './user.entity';
-import { Role } from './role.entity';
 import { Task } from './task.entity';
 
 @Entity('organizations')
@@ -39,9 +38,6 @@ export class Organization {
 
   @OneToMany(() => User, user => user.organization)
   users: User[];
-
-  @OneToMany(() => Role, role => role.organization)
-  roles: Role[];
 
   @OneToMany(() => Task, task => task.organization)
   tasks: Task[];

@@ -3,8 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from '../entities';
-import { CurrentUser } from '../auth/current-user.decorator';
-import { AuthContext, PERMISSIONS } from '@secure-tms/auth';
+import { PERMISSIONS } from '@secure-tms/auth';
 import { Permissions } from '../auth/permissions.guard';
 
 @Controller('roles')
@@ -16,22 +15,23 @@ export class RoleController {
   ) {}
 
   /**
-   * Get all roles in the current user's organization
-   * Only accessible to users with USER_READ permission (for user management)
+   * Get all global roles available in the system
+   * These roles can be assigned to users in any organization
    */
   @Get()
   @Permissions(PERMISSIONS.USER_READ)
-  async findAllInOrganization(@CurrentUser() user: AuthContext['user']) {
+  async findAll() {
     return this.roleRepository.find({
-      where: { organizationId: user.organizationId },
       select: {
         id: true,
         name: true,
         description: true,
         permissions: true,
-        organizationId: true,
         createdAt: true,
         updatedAt: true,
+      },
+      order: {
+        name: 'ASC'
       }
     });
   }
@@ -41,12 +41,9 @@ export class RoleController {
    */
   @Get(':id')
   @Permissions(PERMISSIONS.USER_READ)
-  async findOne(
-    @Param('id') id: string,
-    @CurrentUser() user: AuthContext['user']
-  ) {
+  async findOne(@Param('id') id: string) {
     return this.roleRepository.findOne({
-      where: { id, organizationId: user.organizationId },
+      where: { id },
     });
   }
 }

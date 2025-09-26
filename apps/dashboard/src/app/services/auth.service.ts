@@ -12,6 +12,10 @@ interface AuthResponseExtended extends AuthResponse {
       name: 'Owner' | 'Admin' | 'Viewer';
       permissions: string[];
     };
+    organization?: {
+      id: string;
+      name: string;
+    };
   };
 }
 
@@ -25,6 +29,10 @@ interface ProfileResponse {
   role?: {
     name: string;
     permissions: string[];
+  };
+  organization?: {
+    id: string;
+    name: string;
   };
 }
 
@@ -98,7 +106,8 @@ export class AuthService {
             organizationId: response.user.organizationId,
             roleId: response.user.roleId,
             roleName: tokenPayload?.roleName || response.user.role?.name || 'Viewer',
-            permissions: tokenPayload?.permissions || response.user.role?.permissions || []
+            permissions: tokenPayload?.permissions || response.user.role?.permissions || [],
+            organizationName: response.user.organization?.name
           };
           
           // Store user data only in memory (BehaviorSubject)
@@ -149,7 +158,8 @@ export class AuthService {
             organizationId: user.organizationId,
             roleId: user.roleId,
             roleName: (user.roleName || user.role?.name || 'Viewer') as 'Owner' | 'Admin' | 'Viewer',
-            permissions: user.permissions || user.role?.permissions || []
+            permissions: user.permissions || user.role?.permissions || [],
+            organizationName: user.organization?.name
           };
           
           // Store user data only in memory (BehaviorSubject)
